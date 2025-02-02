@@ -7,7 +7,7 @@ return {
             function()
                 require("neo-tree.command").execute({
                     toggle = true,
-                    reveal_force_cwd = true,
+                    dir = vim.fn.expand("%:p:h")
                 })
             end,
         },
