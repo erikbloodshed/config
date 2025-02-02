@@ -20,9 +20,9 @@ return {
             },
 
             formatting = {
-                fields = { "abbr", "kind", "menu" },
+                fields = { "kind", "abbr", "menu" },
 
-                format = function(_, vim_item)
+                format = function(entry, vim_item)
                     local symbol = {
                         Array = "󰅪",
                         Class = "󰠱",
@@ -51,19 +51,21 @@ return {
                         Value = "󰎠",
                         Variable = "󰀫",
                     }
-                    local max_abbr = 25
-                    local max_menu = 15
+
+                    vim_item.kind = string.format("%s", symbol[vim_item.kind] or "")
+
+                    local max_abbr = 35
                     local ellipsis = "..."
-
-                    vim_item.kind = string.format("%s %s", symbol[vim_item.kind] or symbol.Text, vim_item.kind)
-
                     if vim.api.nvim_strwidth(vim_item.abbr) > max_abbr then
                         vim_item.abbr = vim.fn.strcharpart(vim_item.abbr, 0, max_abbr) .. ellipsis
                     end
 
-                    if vim.api.nvim_strwidth(vim_item.menu or "") > max_menu then
-                        vim_item.menu = vim.fn.strcharpart(vim_item.menu, 0, max_menu) .. ellipsis
-                    end
+                    vim_item.menu = "   " .. ({
+                        buffer = "[Buffer]",
+                        nvim_lsp = "[LSP]",
+                        luasnip = "[LuaSnip]",
+                        nvim_lua = "[Lua]"
+                    })[entry.source.name]
 
                     return vim_item
                 end,
@@ -100,8 +102,9 @@ return {
                 completion = cmp.config.window.bordered({
                     winhighlight = "Normal:Normal,FloatBorder:FloatBorder,CursorLine:PMenuSel,Search:None",
                     border = "rounded",
-                    side_padding = 1,
+                    side_padding = 2,
                     scrollbar = false,
+                    col_offset = -3
                 }),
                 documentation = cmp.config.window.bordered({
                     winhighlight = "Normal:Normal,FloatBorder:FloatBorder",
