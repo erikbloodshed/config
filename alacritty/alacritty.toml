@@ -1,0 +1,47 @@
+general.working_directory = "/home/xenyan/"
+general.import = [ "~/.config/alacritty/colors/tokyonight_night.toml",
+                   "~/.config/alacritty/keybindings.toml" ]
+
+[cursor]
+blink_timeout = 0 
+blink_interval = 750
+
+[cursor.style]
+shape = "Block"
+blinking = "Off"
+
+[font]
+builtin_box_drawing = true
+size = 10
+
+[font.bold]
+family = "JetBrainsMonoNL Nerd Font Mono"
+style = "SemiBold"
+
+[font.italic]
+family = "JetBrainsMonoNL Nerd Font Mono"
+style = "Italic"
+
+[font.normal]
+family = "JetBrainsMonoNL Nerd Font Mono"
+style = "Regular"
+
+[mouse]
+hide_when_typing = true
+
+[window]
+decorations = "Full"
+decorations_theme_variant = "Dark"
+dynamic_padding = true
+dynamic_title = true
+opacity = 1.0
+startup_mode = "Windowed"
+title = "Alacritty"
+
+[window.dimensions]
+columns = 150
+lines = 35
+
+[window.padding]
+x = 0
+y = 0 

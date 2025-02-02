@@ -1,0 +1,16 @@
+[[keyboard.bindings]]
+key = "V"
+mode = "~Vi"
+mods = "Control|Shift"
+action = "Paste"
+
+[[keyboard.bindings]]
+key = "C"
+mode = "~Vi"
+mods = "Control|Shift"
+action = "Copy"
+
+[[keyboard.bindings]]
+key = "F11"
+mods = "Shift"
+action = "ToggleFullscreen"
