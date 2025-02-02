@@ -1,8 +1,8 @@
 *
-nvim/lazy-lock.json
 !.gitignore
 !nvim/
 !nvim/**
+nvim/lazy-lock.json
 !alacritty/
 !alacritty/**
 !fish/
