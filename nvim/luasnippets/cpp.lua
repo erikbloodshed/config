@@ -4,15 +4,14 @@ local insert = luasnip.insert_node
 local format = require("luasnip.extras.fmt").fmt
 
 return {
-    snippet("main",
-        format([[
-        #include <iostream>
-        {}
+    snippet(
+        "main",
+        format( [[
         int main()
         {{
             {}
             return 0;
         }}
-        ]],{insert(1), insert(0) })
-    )
+        ]], {insert(0)})
+    ),
 }

@@ -1,12 +1,9 @@
 return {
     "saghen/blink.cmp",
-    event = "InsertEnter",
 
-    -- use a release tag to download pre-built binaries
-    version = "*",
-    -- AND/OR build from source, requires nightly: https://rust-lang.github.io/rustup/concepts/channels.html#working-with-nightly-rust
-    -- If you use nix, you can build from source using latest nightly rust with:
-    -- build = 'nix run .#build-plugin',
+    event = { "InsertEnter", "CmdLineEnter" },
+
+    build = "cargo +nightly build --release",
 
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config
@@ -20,10 +17,22 @@ return {
                 auto_brackets = { enabled = false },
             },
             list = { selection = { preselect = false, auto_insert = false } },
+            menu = {
+                border = "rounded",
+                scrollbar = false,
+            },
+            ghost_text = {
+                enabled = true,
+            },
         },
         keymap = {
             preset = "default",
             ["<Tab>"] = { "select_and_accept", "fallback" },
+            ["<Up>"] = { "select_prev", "fallback" },
+            ["<Down>"] = { "select_next", "fallback" },
+            ["<C-p>"] = { "select_prev", "fallback" },
+            ["<C-n>"] = { "select_next", "fallback" },
+            ["<C-e>"] = { "hide", "fallback" },
         },
 
         snippets = { preset = "luasnip" },
@@ -41,8 +50,9 @@ return {
         -- Default list of enabled providers defined so that you can extend it
         -- elsewhere in your config, without redefining it, due to `opts_extend`
         sources = {
-            default = { "lsp", "snippets", "path", "buffer" },
+            default = { "lsp", "snippets", "path" },
         },
     },
+
     opts_extend = { "sources.default" },
 }

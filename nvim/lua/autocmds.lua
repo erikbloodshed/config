@@ -82,7 +82,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 })
 
 vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-    pattern = { "c", "cpp" },
+    pattern = { "*.c", "*.cpp", "*.cxx" },
     callback = function()
         vim.api.nvim_buf_set_var(0, "has_compiled", false)
     end,
