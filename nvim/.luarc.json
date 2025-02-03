@@ -28,6 +28,7 @@
             "/home/xenyan/.local/share/nvim/lazy/plenary.nvim/lua",
             "/home/xenyan/.local/share/nvim/lazy/tokyonight/lua",
             "/home/xenyan/.local/share/nvim/lazy/trouble/lua",
+            "/home/xenyan/.local/share/nvim/lazy/blink.cmp/lua",
             "${3rd}/luv/library"
         ]
     }
