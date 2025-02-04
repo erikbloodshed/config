@@ -3,8 +3,9 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_python3_provider = 0
 vim.g.loaded_ruby_provider = 0
 
+vim.o.clipboard = "unnamedplus"
 if vim.fn.has("wsl") == 1 then
-    vim.g.clipboard = {
+    vim.o.clipboard = {
         name = "WslClipboard",
         copy = {
             ["+"] = "clip.exe",
@@ -14,10 +15,8 @@ if vim.fn.has("wsl") == 1 then
             ["+"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
             ["*"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
         },
-        cache_enabled = 0,
+        cache_enabled = false,
     }
-else
-    vim.g.clipboard = "unnamedplus"
 end
 
 vim.o.updatetime = 300
