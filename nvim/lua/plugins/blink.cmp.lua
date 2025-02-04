@@ -11,7 +11,7 @@ return {
             accept = {
                 auto_brackets = { enabled = false },
             },
-            list = { selection = { preselect = false, auto_insert = false } },
+            list = { selection = { preselect = true, auto_insert = false } },
             menu = {
                 border = "rounded",
                 scrollbar = false,
@@ -28,9 +28,9 @@ return {
         },
         keymap = {
             preset = "none",
-            ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
-            ["S-<Tab>"] = { "select_prev", "snippet_backward", "fallback" },
-            ["<CR>"] = { "accept" , "fallback" },
+            ["<Tab>"] = { "select_and_accept", "fallback" },
+            ["<C-j>"] = { "snippet_forward", "fallback"},
+            ["<C-k>"] = { "snippet_backward", "fallback"},
             ["<Up>"] = { "select_prev", "fallback" },
             ["<Down>"] = { "select_next", "fallback" },
             ["<C-p>"] = { "select_prev", "fallback" },
