@@ -20,6 +20,13 @@ vim.api.nvim_create_autocmd("Filetype", {
         local default_flags = "-std=c++23 -O2"
         local ext = vim.fn.expand("%:e")
 
+        vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+            buffer = 0,
+            callback = function()
+                vim.api.nvim_buf_set_var(0, "has_compiled", false)
+            end,
+        })
+
         if vim.bo.filetype == "c" then
             compiler = "gcc"
             default_flags = "-std=c23 -O2"
@@ -59,7 +66,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 
         local run = function()
             local trouble = require("trouble")
-            if (trouble.is_open()) then
+            if trouble.is_open() then
                 trouble.close()
             end
             if ext == "h" or ext == "hpp" then
@@ -78,13 +85,6 @@ vim.api.nvim_create_autocmd("Filetype", {
 
         vim.keymap.set({ "n" }, "<leader>rc", compile, { buffer = true, noremap = true })
         vim.keymap.set({ "n" }, "<leader>rr", run, { buffer = true, noremap = true })
-    end,
-})
-
-vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-    pattern = { "*.c", "*.cpp", "*.cxx" },
-    callback = function()
-        vim.api.nvim_buf_set_var(0, "has_compiled", false)
     end,
 })
 

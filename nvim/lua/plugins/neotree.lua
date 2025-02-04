@@ -7,7 +7,7 @@ return {
             function()
                 require("neo-tree.command").execute({
                     toggle = true,
-                    dir = vim.fn.expand("%:p:h")
+                    dir = vim.fn.expand("%:p:h"),
                 })
             end,
         },
@@ -22,11 +22,13 @@ return {
             end,
         },
     },
+
     dependencies = {
         "nvim-lua/plenary.nvim",
         "nvim-tree/nvim-web-devicons",
         "MunifTanjim/nui.nvim",
     },
+
     config = function()
         require("neo-tree").setup({
             enable_git_status = false,
@@ -70,20 +72,6 @@ return {
                     event = "neo_tree_popup_input_ready",
                     handler = function(args)
                         vim.keymap.set("i", "<esc>", vim.cmd.stopinsert, { noremap = true, buffer = args.bufnr })
-                    end,
-                },
-                {
-                    event = "neo_tree_buffer_enter",
-                    handler = function()
-                        vim.cmd("highlight! Cursor blend=100")
-                        vim.opt.guicursor:append("a:Cursor/lCursor")
-                    end,
-                },
-                {
-                    event = "neo_tree_buffer_leave",
-                    handler = function()
-                        vim.cmd("highlight! Cursor blend=0")
-                        vim.opt.guicursor:remove("a:Cursor/lCursor")
                     end,
                 },
             },
