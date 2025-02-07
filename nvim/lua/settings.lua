@@ -3,10 +3,8 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_python3_provider = 0
 vim.g.loaded_ruby_provider = 0
 
-vim.opt.clipboard:append("unnamedplus")
-
 if vim.fn.has("wsl") == 1 then
-    vim.opt.clipboard = {
+    vim.g.clipboard = {
         name = "WslClipboard",
         copy = {
             ["+"] = "clip.exe",
@@ -18,6 +16,8 @@ if vim.fn.has("wsl") == 1 then
         },
         cache_enabled = false,
     }
+else
+    vim.g.clipboard = "unnamedplus"
 end
 
 vim.o.updatetime = 300
