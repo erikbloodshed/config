@@ -4,6 +4,7 @@ vim.g.loaded_python3_provider = 0
 vim.g.loaded_ruby_provider = 0
 
 vim.opt.clipboard:append("unnamedplus")
+
 if vim.fn.has("wsl") == 1 then
     vim.opt.clipboard = {
         name = "WslClipboard",

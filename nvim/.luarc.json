@@ -31,6 +31,7 @@
             "/home/xenyan/.local/share/nvim/lazy/blink.cmp/lua",
             "${3rd}/luv/library"
         ]
-    }
+    },
+    "telemetry.enable": false
 }
 
