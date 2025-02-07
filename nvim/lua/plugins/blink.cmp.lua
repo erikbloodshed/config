@@ -40,21 +40,10 @@ return {
 
         appearance = {
             use_nvim_cmp_as_default = false,
-            nerd_font_variant = "mono",
         },
 
         sources = {
             default = { "lsp", "snippets", "path" },
-            providers = {
-                lsp = {
-                    transform_items = function(_, items)
-                        return vim.tbl_filter(function(item)
-                            return item.kind ~= vim.lsp.protocol.CompletionItemKind.Text
-                                or item.kind ~= vim.lsp.protocol.CompletionTag.Deprecated
-                        end, items)
-                    end,
-                },
-            },
         },
     },
 }
