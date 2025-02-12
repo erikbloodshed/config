@@ -16,16 +16,11 @@ return {
                     align_to = "label",
                     padding = 1,
                     gap = 4,
-                    columns = {
-                        { "kind_icon" },
-                        { "label" },
-                        { "kind" },
-                        { "source_name" },
-                    },
+                    columns = { { "kind_icon" }, { "label" }, { "kind" }, { "source_name" } },
                 },
             },
-            ghost_text = { enabled = false },
         },
+
         keymap = {
             preset = "none",
             ["<Tab>"] = { "select_and_accept", "snippet_forward", "fallback" },
@@ -36,14 +31,16 @@ return {
             ["<C-n>"] = { "select_next", "fallback" },
         },
 
-        snippets = { preset = "luasnip" },
-
-        appearance = {
-            use_nvim_cmp_as_default = false,
-        },
+        snippets = { preset = "default" },
+        appearance = { use_nvim_cmp_as_default = false },
 
         sources = {
             default = { "lsp", "snippets", "path" },
+            transform_items = function(_, items)
+                return vim.tbl_filter(function(item)
+                    return not item.deprecated
+                end, items)
+            end,
         },
     },
 }

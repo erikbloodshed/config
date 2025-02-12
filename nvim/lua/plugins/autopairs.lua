@@ -2,37 +2,20 @@ return {
     "windwp/nvim-autopairs",
     event = "InsertEnter",
     config = function()
-        if pcall(require, "cmp") then
-            local autopairs = require("nvim-autopairs")
-            local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-            local cmp = require("cmp")
+        local autopairs = require("nvim-autopairs")
 
-            autopairs.setup({
-                map_cr = true,
-            })
+        autopairs.setup()
 
-            -- cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-            local handlers = require("nvim-autopairs.completion.handlers")
-
-            cmp.event:on(
-                "confirm_done",
-                cmp_autopairs.on_confirm_done({
-                    filetypes = {
-                        -- "*" is a alias to all filetypes
-                        ["*"] = {
-                            ["("] = {
-                                kind = {
-                                    cmp.lsp.CompletionItemKind.Function,
-                                    cmp.lsp.CompletionItemKind.Method,
-                                },
-                                handler = handlers["*"],
-                            },
-                        },
-                    },
-                })
-            )
-        else
-            require("nvim-autopairs").setup({ map_cr = true })
-        end
+        -- Autoclosing angle-brackets.
+        local rule = require("nvim-autopairs.rule")
+        local conds = require("nvim-autopairs.conds")
+        autopairs.add_rule(rule("<", ">", {
+            -- Avoid conflicts with nvim-ts-autotag.
+            "-html",
+            "-javascriptreact",
+            "-typescriptreact",
+        }):with_pair(conds.before_regex("%a+:?:?$", 3)):with_move(function(opts)
+            return opts.char == ">"
+        end))
     end,
 }

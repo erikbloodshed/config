@@ -17,7 +17,7 @@ if vim.fn.has("wsl") == 1 then
         cache_enabled = false,
     }
 else
-    vim.g.clipboard = "unnamedplus"
+    vim.o.clipboard = "unnamedplus"
 end
 
 vim.o.updatetime = 300

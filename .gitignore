@@ -7,3 +7,5 @@ nvim/lazy-lock.json
 !alacritty/**
 !fish/
 !fish/**
+!ghostty/
+!ghostty/**
