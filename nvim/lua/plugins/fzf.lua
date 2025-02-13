@@ -16,12 +16,6 @@ return {
             end,
             { desc = "Fzf Buffers" }
         },
-        {
-        "<leader>cc",
-        function()
-           require("fzf-lua").files({ cwd = "~/.config/nvim" })
-        end, { desc = "Neovim Config" }
-        }
     },
 
     config = function()

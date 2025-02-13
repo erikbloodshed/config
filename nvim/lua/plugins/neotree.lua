@@ -21,6 +21,15 @@ return {
                 })
             end,
         },
+        {
+            "<leader>cc",
+            function()
+                require("neo-tree.command").execute({
+                    toggle = true,
+                    dir = vim.fn.stdpath("config"),
+                })
+            end,
+        },
     },
 
     dependencies = {
