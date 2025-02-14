@@ -16,16 +16,11 @@ vim.api.nvim_create_autocmd("Filetype", {
         vim.b.current_tick = 0
         local infile = vim.api.nvim_buf_get_name(0)
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
-        local compiler = "g++"
-        local default_flags = "-std=c++23 -O2"
         local ext = vim.fn.expand("%:e")
-
-        if vim.bo.filetype == "c" then
-            compiler = "gcc"
-            default_flags = "-std=c23 -O2"
-        end
+        local compiler = vim.bo.filetype == "cpp" and "g++" or "gcc"
 
         local get_compile_flags = function()
+            local default_flags = vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -02"
             local dir = vim.fn.expand("%:p:h")
             while dir do
                 local file_path = dir .. "/.compile_flags"
@@ -38,6 +33,7 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local flags = get_compile_flags()
+        local cmd = string.format("!%s %s -o %s %s", compiler, flags, outfile, infile)
 
         local compile = function()
             if ext == "h" or ext == "hpp" then
@@ -45,7 +41,6 @@ vim.api.nvim_create_autocmd("Filetype", {
             elseif vim.b.current_tick == vim.b.changedtick then
                 return true
             elseif next(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) == nil then
-                local cmd = string.format("!%s %s -o %s %s", compiler, flags, outfile, infile)
                 vim.api.nvim_command(cmd)
                 vim.b.current_tick = vim.b.changedtick
                 return true
