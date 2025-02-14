@@ -37,12 +37,19 @@ return {
             default = { "lsp", "snippets", "path" },
             providers = {
                 lsp = {
+                    min_keyword_length = 2,
                     transform_items = function(_, items)
                         return vim.tbl_filter(function(item)
                             return not item.deprecated
                         end, items)
                     end,
                 },
+                cmdline = {
+                    min_keyword_length = 2
+                },
+                snippets = {
+                    min_keyword_length = 3
+                }
             },
         },
     },

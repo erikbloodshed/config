@@ -13,19 +13,12 @@ vim.api.nvim_create_autocmd("Filetype", {
         vim.opt_local.cinkeys:remove(":")
         vim.opt_local.cindent = true
         vim.opt_local.autowrite = true
-        vim.b.has_compiled = false
+        vim.b.current_tick = 0
         local infile = vim.api.nvim_buf_get_name(0)
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
         local compiler = "g++"
         local default_flags = "-std=c++23 -O2"
         local ext = vim.fn.expand("%:e")
-
-        vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-            buffer = 0,
-            callback = function()
-                vim.api.nvim_buf_set_var(0, "has_compiled", false)
-            end,
-        })
 
         if vim.bo.filetype == "c" then
             compiler = "gcc"
@@ -45,22 +38,20 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local flags = get_compile_flags()
+
         local compile = function()
             if ext == "h" or ext == "hpp" then
-                return
-            end
-            local diagnostics = vim.diagnostic.get(0, {
-                severity = {
-                    vim.diagnostic.severity.ERROR,
-                    -- vim.diagnostic.severity.WARN,
-                },
-            })
-            if next(diagnostics) == nil then
+                return false
+            elseif vim.b.current_tick == vim.b.changedtick then
+                return true
+            elseif next(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) == nil then
                 local cmd = string.format("!%s %s -o %s %s", compiler, flags, outfile, infile)
                 vim.api.nvim_command(cmd)
-                vim.b.has_compiled = true
+                vim.b.current_tick = vim.b.changedtick
+                return true
             else
                 require("trouble").open("diagnostics")
+                return false
             end
         end
 
@@ -69,13 +60,8 @@ vim.api.nvim_create_autocmd("Filetype", {
             if trouble.is_open() then
                 trouble.close()
             end
-            if ext == "h" or ext == "hpp" then
-                return
-            end
-            if not vim.b.has_compiled or not vim.uv.fs_stat(outfile) then
-                compile()
-            end
-            if vim.b.has_compiled then
+
+            if compile() then
                 vim.cmd.terminal()
                 vim.defer_fn(function()
                     vim.api.nvim_input(outfile .. "<CR>")
@@ -92,6 +78,13 @@ vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
         vim.cmd.startinsert()
+    end,
+})
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+    pattern = { "*.c", "*.cpp", "*.cxx", "*.lua", "*.py" },
+    callback = function(args)
+        require("conform").format({ bufnr = args.buf })
     end,
 })
 
