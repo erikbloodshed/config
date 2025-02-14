@@ -12,6 +12,7 @@ return {
             vim.api.nvim_set_hl(0, "Cursor", { blend = 100, fg = hl.fg, bg = hl.bg })
             vim.opt.guicursor:append("a:Cursor/lCursor")
         end
+
         local show_cursor = function()
             local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
             vim.api.nvim_set_hl(0, "Cursor", { blend = 0, fg = hl.fg, bg = hl.bg })
@@ -19,16 +20,9 @@ return {
         end
 
         require("neo-tree").setup({
-            enable_git_status = false,
             source_selector = {
                 winbar = false,
-                content_layout = "center",
-                tabs_layout = "equal",
-                show_separator_on_edge = true,
-                sources = {
-                    { source = "filesystem" },
-                    { source = "buffers" },
-                },
+                statusline = false,
             },
             close_if_last_window = true,
             popup_border_style = "rounded",
@@ -41,12 +35,12 @@ return {
                 use_libuv_file_watcher = false,
             },
             buffers = {
-                bind_to_cwd = true,
+                bind_to_cwd = false,
                 follow_current_file = {
                     enabled = true,
                     leave_dirs_open = false,
                 },
-                show_unloaded = true,
+                show_unloaded = false,
             },
             event_handlers = {
                 {
