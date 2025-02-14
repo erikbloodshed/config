@@ -20,17 +20,19 @@ return {
                 },
             },
         },
-
         keymap = {
             preset = "none",
-            ["<Tab>"] = { "select_and_accept", "snippet_forward", "fallback" },
+            ["<Tab>"] = {
+                "select_and_accept",
+                "snippet_forward",
+                "fallback",
+            },
             ["<S-Tab>"] = { "snippet_backward", "fallback" },
             ["<Up>"] = { "select_prev", "fallback" },
             ["<Down>"] = { "select_next", "fallback" },
             ["<C-p>"] = { "select_prev", "fallback" },
             ["<C-n>"] = { "select_next", "fallback" },
         },
-
         snippets = { preset = "default" },
         appearance = { use_nvim_cmp_as_default = false },
         sources = {
@@ -45,11 +47,11 @@ return {
                     end,
                 },
                 cmdline = {
-                    min_keyword_length = 2
+                    min_keyword_length = 2,
                 },
                 snippets = {
-                    min_keyword_length = 3
-                }
+                    min_keyword_length = 3,
+                },
             },
         },
     },
