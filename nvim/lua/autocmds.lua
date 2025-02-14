@@ -81,13 +81,6 @@ vim.api.nvim_create_autocmd({ "TermOpen" }, {
     end,
 })
 
-vim.api.nvim_create_autocmd("BufWritePre", {
-    pattern = { "*.c", "*.cpp", "*.cxx", "*.lua", "*.py" },
-    callback = function(args)
-        require("conform").format({ bufnr = args.buf })
-    end,
-})
-
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
         vim.diagnostic.config({
