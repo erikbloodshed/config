@@ -47,7 +47,7 @@ require("lazy").setup({
                 "tarPlugin",
                 "tutor",
                 "zipPlugin",
-                "osc52"
+                "osc52",
             },
         },
     },

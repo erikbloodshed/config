@@ -33,14 +33,17 @@ return {
 
         snippets = { preset = "default" },
         appearance = { use_nvim_cmp_as_default = false },
-
         sources = {
             default = { "lsp", "snippets", "path" },
-            transform_items = function(_, items)
-                return vim.tbl_filter(function(item)
-                    return not item.deprecated
-                end, items)
-            end,
+            providers = {
+                lsp = {
+                    transform_items = function(_, items)
+                        return vim.tbl_filter(function(item)
+                            return not item.deprecated
+                        end, items)
+                    end,
+                },
+            },
         },
     },
 }

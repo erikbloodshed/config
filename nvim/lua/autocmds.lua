@@ -117,6 +117,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
         vim.keymap.set("n", "<leader>fc", function()
             require("conform").format({ async = true })
-        end, { buffer = true, noremap = true, nowait = true })
+        end, opts)
     end,
 })

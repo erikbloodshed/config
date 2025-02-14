@@ -1,6 +1,6 @@
 return {
     "stevearc/conform.nvim",
-    event = "InsertEnter",
+    ft = { "c", "cpp", "lua", "python" },
     config = function()
         require("conform").setup({
             formatters_by_ft = {
