@@ -8,38 +8,36 @@ vim.api.nvim_create_autocmd("Filetype", {
 vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "c", "cpp" },
     callback = function()
+        local get_compile_flags = function(filename)
+            local path = vim.fs.find(filename, {
+                upward = true,
+                type = "file",
+                path = vim.fn.expand("%:p:h"),
+                stop = vim.fn.expand("~"),
+            })[1]
+            if path ~= nil then
+                return "@" .. path
+            end
+            return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -02"
+        end
+
         vim.lsp.enable("clangd")
         vim.opt_local.formatoptions:remove({ "c", "r", "o" })
         vim.opt_local.cinkeys:remove(":")
         vim.opt_local.cindent = true
         vim.opt_local.autowrite = true
         vim.b.current_tick = 0
+
+        local compiler = vim.bo.filetype == "cpp" and "g++" or "gcc"
         local infile = vim.api.nvim_buf_get_name(0)
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
         local ext = vim.fn.expand("%:e")
-        local compiler = vim.bo.filetype == "cpp" and "g++" or "gcc"
-
-        local get_compile_flags = function()
-            local default_flags = vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -02"
-            local dir = vim.fn.expand("%:p:h")
-            while dir do
-                local file_path = dir .. "/.compile_flags"
-                if vim.uv.fs_stat(file_path) then
-                    return "@" .. file_path
-                end
-                dir = dir:match("^(.*)/[^/]+$")
-            end
-            return default_flags
-        end
-
-        local flags = get_compile_flags()
+        local flags = get_compile_flags(".compile_flags")
         local cmd = string.format("!%s %s -o %s %s", compiler, flags, outfile, infile)
 
         local compile = function()
             if ext == "h" or ext == "hpp" then
                 return false
-            elseif vim.b.current_tick == vim.b.changedtick then
-                return true
             elseif next(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) == nil then
                 vim.api.nvim_command(cmd)
                 vim.b.current_tick = vim.b.changedtick
@@ -51,12 +49,17 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local run = function()
+            local has_compile = true
+            if vim.b.current_tick ~= vim.b.changedtick then
+                has_compile = compile()
+            end
+
             local trouble = require("trouble")
             if trouble.is_open() then
                 trouble.close()
             end
 
-            if compile() then
+            if has_compile then
                 vim.cmd.terminal()
                 vim.defer_fn(function()
                     vim.api.nvim_input(outfile .. "<CR>")

@@ -7,7 +7,7 @@ return {
     ---@type blink.cmp.Config
     opts = {
         completion = {
-            accept = { auto_brackets = { enabled = false } },
+            accept = { auto_brackets = { enabled = true } },
             list = { selection = { preselect = true, auto_insert = false } },
             menu = {
                 border = "rounded",
@@ -22,16 +22,13 @@ return {
         },
         keymap = {
             preset = "none",
-            ["<Tab>"] = {
-                "select_and_accept",
-                "snippet_forward",
-                "fallback",
-            },
-            ["<S-Tab>"] = { "snippet_backward", "fallback" },
+            ["<Tab>"] = { "select_and_accept", "fallback" },
             ["<Up>"] = { "select_prev", "fallback" },
             ["<Down>"] = { "select_next", "fallback" },
             ["<C-p>"] = { "select_prev", "fallback" },
             ["<C-n>"] = { "select_next", "fallback" },
+            ["<C-j>"] = { "snippet_forward", "fallback" },
+            ["<C-k>"] = { "snippet_backward", "fallback" },
         },
         snippets = { preset = "default" },
         appearance = { use_nvim_cmp_as_default = false },
@@ -39,18 +36,11 @@ return {
             default = { "lsp", "snippets", "path" },
             providers = {
                 lsp = {
-                    min_keyword_length = 2,
                     transform_items = function(_, items)
                         return vim.tbl_filter(function(item)
                             return not item.deprecated
                         end, items)
                     end,
-                },
-                cmdline = {
-                    min_keyword_length = 2,
-                },
-                snippets = {
-                    min_keyword_length = 3,
                 },
             },
         },
