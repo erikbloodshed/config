@@ -38,25 +38,25 @@ vim.api.nvim_create_autocmd("Filetype", {
         local compile = function()
             if ext == "h" or ext == "hpp" then
                 return false
-            elseif next(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) == nil then
-                vim.api.nvim_command(cmd)
+            end
+
+            if vim.tbl_isempty(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) then
+                vim.cmd(cmd)
                 vim.b.current_tick = vim.b.changedtick
                 return true
-            else
-                require("trouble").open("diagnostics")
-                return false
             end
+
+            require("trouble").open("diagnostics")
+            return false
         end
 
         local run = function()
-            local has_compile = vim.b.current_tick == vim.b.changedtick or compile()
-
             local trouble = require("trouble")
             if trouble.is_open() then
                 trouble.close()
             end
 
-            if has_compile then
+            if vim.b.current_tick == vim.b.changedtick or compile() then
                 vim.cmd.terminal()
                 vim.defer_fn(function()
                     vim.api.nvim_input(outfile .. "<CR>")
