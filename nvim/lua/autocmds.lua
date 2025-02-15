@@ -49,10 +49,7 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local run = function()
-            local has_compile = true
-            if vim.b.current_tick ~= vim.b.changedtick then
-                has_compile = compile()
-            end
+            local has_compile = vim.b.current_tick == vim.b.changedtick or compile()
 
             local trouble = require("trouble")
             if trouble.is_open() then
