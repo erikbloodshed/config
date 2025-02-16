@@ -7,14 +7,14 @@ return {
     },
 
     config = function()
+        local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
+
         local function hide_cursor()
-            local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
             vim.api.nvim_set_hl(0, "Cursor", { blend = 100, fg = hl.fg, bg = hl.bg })
             vim.opt.guicursor:append("a:Cursor/lCursor")
         end
 
         local function show_cursor()
-            local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
             vim.api.nvim_set_hl(0, "Cursor", { blend = 0, fg = hl.fg, bg = hl.bg })
             vim.opt.guicursor:remove("a:Cursor/lCursor")
         end
@@ -34,26 +34,14 @@ return {
                 },
                 use_libuv_file_watcher = false,
             },
-            buffers = {
-                bind_to_cwd = false,
-                follow_current_file = {
-                    enabled = true,
-                    leave_dirs_open = false,
-                },
-                show_unloaded = false,
-            },
             event_handlers = {
                 {
                     event = "neo_tree_buffer_enter",
-                    handler = function()
-                        hide_cursor()
-                    end,
+                    handler = hide_cursor
                 },
                 {
                     event = "neo_tree_buffer_leave",
-                    handler = function()
-                        show_cursor()
-                    end,
+                    handler = show_cursor
                 },
                 {
                     event = "file_opened",
@@ -90,16 +78,6 @@ return {
                 require("neo-tree.command").execute({
                     toggle = true,
                     dir = vim.fn.stdpath("config"),
-                })
-            end,
-        },
-        {
-            "<leader>eb",
-            function()
-                require("neo-tree.command").execute({
-                    toggle = true,
-                    position = "right",
-                    source = "buffers",
                 })
             end,
         },

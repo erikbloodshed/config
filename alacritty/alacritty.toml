@@ -24,7 +24,7 @@ style = "Italic"
 
 [font.normal]
 family = "JetBrainsMonoNL Nerd Font Mono"
-style = "Regular"
+style = "regular"
 
 [mouse]
 hide_when_typing = true

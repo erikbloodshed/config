@@ -1,11 +1,4 @@
 vim.api.nvim_create_autocmd("Filetype", {
-    pattern = { "qf", "help", "query" },
-    callback = function()
-        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = true, silent = true, noremap = true })
-    end,
-})
-
-vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "c", "cpp" },
     callback = function()
         vim.lsp.enable("clangd")
@@ -20,7 +13,7 @@ vim.api.nvim_create_autocmd("Filetype", {
             if path ~= nil then
                 return "@" .. path
             end
-            return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -02"
+            return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -O2"
         end
 
         vim.opt_local.formatoptions:remove({ "c", "r", "o" })
@@ -73,6 +66,13 @@ vim.api.nvim_create_autocmd("Filetype", {
     end,
 })
 
+vim.api.nvim_create_autocmd("Filetype", {
+    pattern = { "qf", "help", "query" },
+    callback = function()
+        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = true, silent = true, noremap = true })
+    end,
+})
+
 vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
@@ -100,8 +100,5 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>gi", vim.lsp.buf.implementation, opts)
         vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>fc", function()
-            require("conform").format({ async = true })
-        end, opts)
     end,
 })
