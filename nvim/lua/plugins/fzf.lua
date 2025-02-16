@@ -17,8 +17,4 @@ return {
             { desc = "Fzf Buffers" }
         },
     },
-
-    config = function()
-        require("fzf-lua").setup({})
-    end
 }

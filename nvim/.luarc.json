@@ -10,9 +10,6 @@
         "checkThirdParty": false,
         "library": [
             "/usr/local/share/nvim/runtime/lua",
-            "/home/xenyan/.local/share/nvim/lazy/cmp_luasnip/lua",
-            "/home/xenyan/.local/share/nvim/lazy/cmp-nvim-lsp/lua",
-            "/home/xenyan/.local/share/nvim/lazy/cmp-nvim-lua/lua",
             "/home/xenyan/.local/share/nvim/lazy/Comment.nvim/lua",
             "/home/xenyan/.local/share/nvim/lazy/dressing/lua",
             "/home/xenyan/.local/share/nvim/lazy/lazy.nvim/lua",
@@ -21,7 +18,6 @@
             "/home/xenyan/.local/share/nvim/lazy/neo-tree.nvim/lua",
             "/home/xenyan/.local/share/nvim/lazy/nui.nvim/lua",
             "/home/xenyan/.local/share/nvim/lazy/nvim-autopairs/lua",
-            "/home/xenyan/.local/share/nvim/lazy/nvim-cmp/lua",
             "/home/xenyan/.local/share/nvim/lazy/nvim-surround/lua",
             "/home/xenyan/.local/share/nvim/lazy/nvim-treesitter/lua",
             "/home/xenyan/.local/share/nvim/lazy/nvim-web-devicons/lua",

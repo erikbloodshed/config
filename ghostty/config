@@ -19,6 +19,7 @@
 # ==========================
 # # The config file consists of simple key-value pairs,
 # # separated by equals signs.
+alpha-blending = native
 theme = tokyonight_night
 background-opacity = 0.99
 font-family = JetBrainsMonoNL Nerd Font Mono

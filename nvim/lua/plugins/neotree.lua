@@ -7,13 +7,13 @@ return {
     },
 
     config = function()
-        local hide_cursor = function()
+        local function hide_cursor()
             local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
             vim.api.nvim_set_hl(0, "Cursor", { blend = 100, fg = hl.fg, bg = hl.bg })
             vim.opt.guicursor:append("a:Cursor/lCursor")
         end
 
-        local show_cursor = function()
+        local function show_cursor()
             local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
             vim.api.nvim_set_hl(0, "Cursor", { blend = 0, fg = hl.fg, bg = hl.bg })
             vim.opt.guicursor:remove("a:Cursor/lCursor")
