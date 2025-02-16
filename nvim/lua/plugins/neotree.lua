@@ -37,11 +37,11 @@ return {
             event_handlers = {
                 {
                     event = "neo_tree_buffer_enter",
-                    handler = hide_cursor
+                    handler = hide_cursor,
                 },
                 {
                     event = "neo_tree_buffer_leave",
-                    handler = show_cursor
+                    handler = show_cursor,
                 },
                 {
                     event = "file_opened",
@@ -66,9 +66,10 @@ return {
         {
             "<leader>ef",
             function()
+                local exclude_ft = { query = true, checkhealth = true, help = true }
                 require("neo-tree.command").execute({
                     toggle = true,
-                    dir = vim.fn.expand("%:p:h"),
+                    dir = exclude_ft[vim.bo.filetype] and vim.fn.getcwd() or vim.fn.expand("%:p:h"),
                 })
             end,
         },

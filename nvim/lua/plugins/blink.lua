@@ -1,6 +1,6 @@
 return {
     "saghen/blink.cmp",
-    event = { "InsertEnter" },
+    event = "InsertEnter",
     build = "cargo +nightly build --release",
     dependencies = {
         {
@@ -8,7 +8,9 @@ return {
             version = "v2.*",
             build = "make install_jsregexp",
             config = function()
-                require("luasnip.loaders.from_vscode").lazy_load({ paths = { vim.fn.stdpath("config") .. "/snippets" } })
+                require("luasnip.loaders.from_vscode").lazy_load({
+                    paths = { vim.fn.stdpath("config") .. "/snippets" },
+                })
             end,
         },
     },

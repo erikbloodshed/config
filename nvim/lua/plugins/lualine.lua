@@ -59,7 +59,4 @@ return {
         inactive_winbar = {},
         extensions = {},
     },
-    config = function(_, opts)
-        require("lualine").setup(opts)
-    end,
 }
