@@ -39,12 +39,8 @@ return {
             highlights["@lsp.typemod.variable.static"] = {}
             highlights["@repeat"] = { link = "@keyword" }
             highlights["@variable.parameter"] = { fg = colors.red }
-            highlights["Directory"] = { fg = "#7aa2f7", bold = true }
+            highlights["Directory"] = { fg = colors.blue, bold = true }
+            highlights["NeoTreeRootName"] = { link = "Directory"}
         end,
     },
-
-    config = function(_, opts)
-        require("tokyonight").setup(opts)
-        vim.cmd("colorscheme tokyonight")
-    end,
 }
