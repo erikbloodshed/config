@@ -1,6 +1,6 @@
 return {
     "stevearc/dressing.nvim",
-    event = "VeryLazy",
+    events = "VeryLazy",
     opts = {
         input = {
             prompt_align = "center",

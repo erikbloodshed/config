@@ -2,18 +2,6 @@ return {
     "saghen/blink.cmp",
     event = "InsertEnter",
     build = "cargo +nightly build --release",
-    dependencies = {
-        {
-            "L3MON4D3/LuaSnip",
-            version = "v2.*",
-            build = "make install_jsregexp",
-            config = function()
-                require("luasnip.loaders.from_vscode").lazy_load({
-                    paths = { vim.fn.stdpath("config") .. "/snippets" },
-                })
-            end,
-        },
-    },
 
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config

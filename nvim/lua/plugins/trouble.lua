@@ -1,14 +1,14 @@
 return {
     "folke/trouble.nvim",
-    event = "LspAttach",
+    lazy = true,
     opts = {
-        auto_close = true, -- auto close when there are no items
-        auto_open = false, -- auto open when there are items
+        auto_close = true,
+        auto_open = false,
         win = {
             size = {
                 height = 5,
             },
-        }, -- window options for the results window. Can be a split or a floating window.
+        },
     },
     keys = {
         {
