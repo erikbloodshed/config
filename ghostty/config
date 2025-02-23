@@ -24,6 +24,7 @@ alpha-blending = linear
 background-opacity = 0.98
 font-family = JetBrainsMonoNL Nerd Font Mono
 font-size = 10
+font-style = Medium
 font-style-bold = SemiBold
 theme = tokyonight_night
 window-height = 35
