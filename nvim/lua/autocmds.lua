@@ -16,10 +16,8 @@ vim.api.nvim_create_autocmd("Filetype", {
             return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -O2"
         end
 
-        vim.opt_local.formatoptions:remove({ "c", "r", "o" })
         vim.opt_local.cinkeys:remove(":")
         vim.opt_local.cindent = true
-        vim.opt_local.autowrite = true
         vim.b.current_tick = 0
 
         local trouble = require("trouble")
@@ -95,10 +93,15 @@ vim.api.nvim_create_autocmd("LspAttach", {
                 },
             },
         })
+
         local opts = { buffer = args.buf }
-        vim.keymap.set("n", "<leader>ed", vim.diagnostic.open_float)
+        vim.keymap.set("n", "<leader>ed", vim.diagnostic.open_float, opts)
         vim.keymap.set("n", "<leader>gi", vim.lsp.buf.implementation, opts)
         vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>fc",
+            function()
+                require("conform").format({ async = true })
+            end, opts)
     end,
 })
