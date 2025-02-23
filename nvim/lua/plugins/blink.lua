@@ -16,7 +16,7 @@ return {
                     align_to = "label",
                     padding = 1,
                     gap = 4,
-                    columns = { { "kind_icon" }, { "label" }, { "kind" }, { "source_name" } },
+                    columns = { { "kind_icon" }, { "label" }, { "kind" }},
                 },
             },
         },
