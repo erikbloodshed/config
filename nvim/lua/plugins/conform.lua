@@ -1,6 +1,15 @@
 return {
     "stevearc/conform.nvim",
-    ft = {"c", "cpp", "python", "lua"},
+
+    keys = {
+        {
+            "<leader>fc",
+            function()
+                require("conform").format({ async = true })
+            end,
+        },
+    },
+
     opts = {
         formatters_by_ft = {
             c = { "clang-format" },

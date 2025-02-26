@@ -1,4 +1,3 @@
-vim.lsp.enable("basedpyright")
 local py_file = vim.fn.expand("%:~"):gsub(" ", "\\ ")
 
 vim.keymap.set({ "i", "n" }, "<leader>rr", function()

@@ -26,8 +26,9 @@ end
 
 vim.opt.rtp = vim.opt.rtp ^ lazypath
 
-require("settings")
 require("autocmds")
+require("options")
+require("lsp")
 
 require("lazy").setup({
     spec = "plugins",

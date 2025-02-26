@@ -1,6 +1,6 @@
 return {
     "saghen/blink.cmp",
-    event = "InsertEnter",
+    event = {"InsertEnter", "CmdlineEnter"},
     build = "cargo +nightly build --release",
 
     ---@module 'blink.cmp'
@@ -22,12 +22,13 @@ return {
         },
         keymap = {
             preset = "none",
-            ["<Tab>"] = { "select_and_accept", "snippet_forward", "fallback" },
-            ["<S-Tab>"] = { "snippet_backward", "fallback" },
+            ["<Tab>"] = { "select_and_accept", "fallback" },
             ["<Up>"] = { "select_prev", "fallback" },
             ["<Down>"] = { "select_next", "fallback" },
             ["<C-p>"] = { "select_prev", "fallback" },
             ["<C-n>"] = { "select_next", "fallback" },
+            ["<C-j>"] = { "snippet_forward", "fallback" },
+            ["<C-k>"] = { "snippet_backward", "fallback" },
         },
         snippets = { preset = "luasnip" },
         appearance = { use_nvim_cmp_as_default = false },
