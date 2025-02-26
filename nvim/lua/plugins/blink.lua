@@ -1,6 +1,6 @@
 return {
     "saghen/blink.cmp",
-    event = {"InsertEnter", "CmdlineEnter"},
+    event = {"InsertEnter"},
     build = "cargo +nightly build --release",
 
     ---@module 'blink.cmp'
