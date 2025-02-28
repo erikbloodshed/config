@@ -15,11 +15,12 @@ return {
                 draw = {
                     align_to = "label",
                     padding = 1,
-                    gap = 4,
+                    gap = 2,
                     columns = { { "kind_icon" }, { "label" }, { "kind" }},
                 },
             },
         },
+
         keymap = {
             preset = "none",
             ["<Tab>"] = { "select_and_accept", "fallback" },
@@ -30,6 +31,7 @@ return {
             ["<C-j>"] = { "snippet_forward", "fallback" },
             ["<C-k>"] = { "snippet_backward", "fallback" },
         },
+
         snippets = { preset = "luasnip" },
         appearance = { use_nvim_cmp_as_default = false },
         sources = {
