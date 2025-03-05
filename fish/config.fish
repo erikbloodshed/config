@@ -6,6 +6,7 @@ set -U fish_greeting ""
 
 set PATH $PATH $HOME/.local/bin
 set PATH $PATH $HOME/.cargo/bin
+set PATH $PATH $HOME/.local/bin/lua-language-server/bin
 
 set -g fish_prompt_pwd_dir_length 0
 set -g fish_vi_force_cursor 1
