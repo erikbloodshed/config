@@ -1,6 +1,11 @@
 vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "c", "cpp" },
     callback = function()
+        vim.opt_local.cinkeys:remove(":")
+        vim.opt_local.cindent = true
+        vim.b.current_tick1 = 0
+        vim.b.current_tick2 = 0
+
         local function get_compile_flags(filename)
             local path = vim.fs.find(filename, {
                 upward = true,
@@ -14,17 +19,16 @@ vim.api.nvim_create_autocmd("Filetype", {
             return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -O2"
         end
 
-        vim.opt_local.cinkeys:remove(":")
-        vim.opt_local.cindent = true
-        vim.b.current_tick = 0
-
         local trouble = require("trouble")
         local compiler = vim.bo.filetype == "cpp" and "g++" or "gcc"
         local flags = get_compile_flags(".compile_flags")
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
         local infile = vim.api.nvim_buf_get_name(0)
         local ext = vim.fn.expand("%:e")
-        local cmd = string.format("!%s %s -o %s %s", compiler, flags, outfile, infile)
+        local cmd_compile = string.format("%s %s -o %s %s", compiler, flags, outfile, infile)
+        local asm_file = outfile .. ".s"
+        local cmd_assemble = string.format("%s %s -S %s -o %s", compiler, flags, infile, asm_file)
+
 
         local function compile()
             if ext == "h" or ext == "hpp" then
@@ -32,8 +36,8 @@ vim.api.nvim_create_autocmd("Filetype", {
             end
 
             if vim.tbl_isempty(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) then
-                vim.cmd(cmd)
-                vim.b.current_tick = vim.b.changedtick
+                vim.cmd("!" .. cmd_compile)
+                vim.b.current_tick1 = vim.b.changedtick
                 return true
             end
 
@@ -46,7 +50,7 @@ vim.api.nvim_create_autocmd("Filetype", {
                 trouble.close()
             end
 
-            if vim.b.current_tick == vim.b.changedtick or compile() then
+            if vim.b.current_tick1 == vim.b.changedtick or compile() then
                 vim.cmd.terminal()
                 vim.defer_fn(function()
                     -- to prevent race conditions
@@ -58,30 +62,17 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local function show_assembly()
-            -- Get the current file path
-            if infile == "" then
-                vim.notify("No file detected!", vim.log.levels.ERROR)
-                return
-            end
+            if vim.b.current_tick2 ~= vim.b.changedtick then
+                -- Run the command
+                local result = vim.fn.system(cmd_assemble)
 
-            -- Define the output assembly file (temporary)
-            local asm_file = "/tmp/output.s"
+                -- Check for compilation errors
+                if vim.v.shell_error ~= 0 then
+                    vim.notify("Assembly generation failed:\n" .. result, vim.log.levels.ERROR)
+                    return
+                end
 
-            local cmd_asm = string.format(
-                "%s %s -S -masm=intel " ..
-                "'%s' -o '%s' && " ..
-                "sed -E '/^\\s*\\./d; /^\\s*$/d' '%s' > '%s.cleaned' && " ..
-                "mv '%s.cleaned' '%s'",
-                compiler, flags, infile, asm_file, asm_file, asm_file, asm_file, asm_file
-            )
-
-            -- Run the command
-            local result = vim.fn.system(cmd_asm)
-
-            -- Check for compilation errors
-            if vim.v.shell_error ~= 0 then
-                vim.notify("Compilation failed:\n" .. result, vim.log.levels.ERROR)
-                return
+                vim.b.current_tick2 = vim.b.changedtick
             end
 
             -- Read the generated assembly file
@@ -89,15 +80,15 @@ vim.api.nvim_create_autocmd("Filetype", {
 
             -- Create a scratch buffer
             local buf = vim.api.nvim_create_buf(false, true)
-            vim.api.nvim_set_option_value("buftype", "nofile", { scope = "local", buf = buf })
-            vim.api.nvim_set_option_value("bufhidden", "hide", { scope = "local", buf = buf })
-            vim.api.nvim_set_option_value("swapfile", false, { scope = "local", buf = buf })
+            vim.bo[buf].buftype = "nofile"
+            vim.bo[buf].bufhidden = "hide"
+            vim.bo[buf].swapfile = false
 
             -- Set the assembly content in the buffer
             vim.api.nvim_buf_set_lines(buf, 0, -1, false, asm_content)
 
             -- Set filetype to enable Tree-sitter highlighting
-            vim.api.nvim_set_option_value("filetype", "asm", { scope = "local", buf = buf })
+            vim.bo[buf].filetype = "asm"
 
             -- Open the buffer in a new window
             vim.api.nvim_open_win(buf, true, {
@@ -108,8 +99,12 @@ vim.api.nvim_create_autocmd("Filetype", {
                 col = math.floor(vim.o.columns * 0.1),
                 style = "minimal",
                 border = "rounded",
-                title = "Assembly Code"
+                title = asm_file,
+                title_pos = "center",
             })
+
+            vim.bo[buf].modifiable = false
+            vim.keymap.set("n", "q", vim.cmd.close, { buffer = true, noremap = true, nowait = true })
         end
 
         vim.keymap.set("n", "<leader>rc", compile, { buffer = true, noremap = true })
