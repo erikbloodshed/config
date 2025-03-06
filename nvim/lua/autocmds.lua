@@ -24,10 +24,10 @@ vim.api.nvim_create_autocmd("Filetype", {
         local flags = get_compile_flags(".compile_flags")
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
         local infile = vim.api.nvim_buf_get_name(0)
+        local asm_file = outfile .. ".s"
         local ext = vim.fn.expand("%:e")
         local cmd_compile = string.format("%s %s -o %s %s", compiler, flags, outfile, infile)
-        local asm_file = outfile .. ".s"
-        local cmd_assemble = string.format("%s %s -S %s -o %s", compiler, flags, infile, asm_file)
+        local cmd_assemble = string.format("%s %s -S -o %s %s", compiler, flags, asm_file, infile)
 
 
         local function compile()
@@ -63,16 +63,14 @@ vim.api.nvim_create_autocmd("Filetype", {
 
         local function show_assembly()
             if vim.b.current_tick2 ~= vim.b.changedtick then
-                -- Run the command
-                local result = vim.fn.system(cmd_assemble)
-
-                -- Check for compilation errors
-                if vim.v.shell_error ~= 0 then
-                    vim.notify("Assembly generation failed:\n" .. result, vim.log.levels.ERROR)
+                if vim.tbl_isempty(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) then
+                    vim.cmd("silent! write")
+                    vim.fn.system(cmd_assemble)
+                    vim.b.current_tick2 = vim.b.changedtick
+                else
+                    trouble.open("diagnostics")
                     return
                 end
-
-                vim.b.current_tick2 = vim.b.changedtick
             end
 
             -- Read the generated assembly file
