@@ -1,6 +1,15 @@
 return {
     "folke/trouble.nvim",
-    lazy = true,
+
+    keys = {
+        {
+            "<leader>xx",
+            function()
+                require("trouble").toggle("diagnostics")
+            end,
+        },
+    },
+
     opts = {
         auto_close = true,
         auto_open = false,
@@ -8,14 +17,6 @@ return {
             size = {
                 height = 5,
             },
-        },
-    },
-    keys = {
-        {
-            "<leader>xx",
-            function()
-                require("trouble").toggle("diagnostics")
-            end,
         },
     },
 }
