@@ -19,7 +19,6 @@ vim.api.nvim_create_autocmd("Filetype", {
             return vim.bo.filetype == "cpp" and "-std=c++23 -O2" or "-std=c23 -O2"
         end
 
-        local trouble = require("trouble")
         local compiler = vim.bo.filetype == "cpp" and "g++" or "gcc"
         local flags = get_compile_flags(".compile_flags")
         local outfile = "/tmp/" .. vim.fn.expand("%:t:r")
@@ -35,21 +34,20 @@ vim.api.nvim_create_autocmd("Filetype", {
                 return false
             end
 
-            if vim.tbl_isempty(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) then
+            local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+
+            if vim.tbl_isempty(diagnostics) then
                 vim.cmd("!" .. cmd_compile)
                 vim.b.current_tick1 = vim.b.changedtick
                 return true
             end
 
-            trouble.open("diagnostics")
+            vim.api.nvim_win_set_cursor(0, { diagnostics[1].lnum + 1, diagnostics[1].col })
+
             return false
         end
 
         local function run()
-            if trouble.is_open() then
-                trouble.close()
-            end
-
             if vim.b.current_tick1 == vim.b.changedtick or compile() then
                 vim.cmd.terminal()
                 vim.defer_fn(function()
@@ -68,7 +66,8 @@ vim.api.nvim_create_autocmd("Filetype", {
                     vim.fn.system(cmd_assemble)
                     vim.b.current_tick2 = vim.b.changedtick
                 else
-                    trouble.open("diagnostics")
+                    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+                    vim.api.nvim_win_set_cursor(0, { diagnostics[1].lnum + 1, diagnostics[1].col })
                     return
                 end
             end
@@ -79,14 +78,12 @@ vim.api.nvim_create_autocmd("Filetype", {
             -- Create a scratch buffer
             local buf = vim.api.nvim_create_buf(false, true)
             vim.bo[buf].buftype = "nofile"
-            vim.bo[buf].bufhidden = "hide"
+            vim.bo[buf].bufhidden = "wipe"
             vim.bo[buf].swapfile = false
+            vim.bo[buf].filetype = "asm"
 
             -- Set the assembly content in the buffer
             vim.api.nvim_buf_set_lines(buf, 0, -1, false, asm_content)
-
-            -- Set filetype to enable Tree-sitter highlighting
-            vim.bo[buf].filetype = "asm"
 
             -- Open the buffer in a new window
             vim.api.nvim_open_win(buf, true, {
@@ -113,8 +110,8 @@ vim.api.nvim_create_autocmd("Filetype", {
 
 vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "qf", "help", "query" },
-    callback = function()
-        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = true, silent = true, noremap = true })
+    callback = function(args)
+        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
 })
 

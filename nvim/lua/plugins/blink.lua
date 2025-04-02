@@ -7,7 +7,7 @@ return {
     ---@type blink.cmp.Config
     opts = {
         completion = {
-            accept = { auto_brackets = { enabled = true } },
+            accept = { auto_brackets = { enabled = false } },
             list = { selection = { preselect = true, auto_insert = false } },
             menu = {
                 border = "rounded",

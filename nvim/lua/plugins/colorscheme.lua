@@ -40,7 +40,7 @@ return {
             highlights["@repeat"] = { link = "@keyword" }
             highlights["@variable.parameter"] = { fg = colors.red }
             highlights["Directory"] = { fg = colors.blue, bold = true }
-            highlights["NeoTreeRootName"] = { link = "Directory"}
+            highlights["NeoTreeRootName"] = { link = "Directory" }
         end,
     },
 }
