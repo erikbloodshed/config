@@ -28,6 +28,22 @@ vim.api.nvim_create_autocmd("Filetype", {
         local cmd_compile = string.format("%s %s -o %s %s", compiler, flags, outfile, infile)
         local cmd_assemble = string.format("%s %s -S -o %s %s", compiler, flags, asm_file, infile)
 
+        local function goto_first_diagnostic(diagnostics)
+            local col = diagnostics[1].col
+            local lnum = diagnostics[1].lnum
+
+            -- Ensure line number is within buffer range
+            local buf_lines = vim.api.nvim_buf_line_count(0)
+            lnum = math.min(lnum, buf_lines - 1) -- lnum is 0-based, so subtract 1
+
+            -- Get line content safely
+            local line = vim.api.nvim_buf_get_lines(0, lnum, lnum + 1, false)[1] or ""
+
+            -- Clamp column within the valid range
+            col = math.min(col, #line)
+
+            vim.api.nvim_win_set_cursor(0, { lnum + 1, col })
+        end
 
         local function compile()
             if ext == "h" or ext == "hpp" then
@@ -42,7 +58,7 @@ vim.api.nvim_create_autocmd("Filetype", {
                 return true
             end
 
-            vim.api.nvim_win_set_cursor(0, { diagnostics[1].lnum + 1, diagnostics[1].col })
+            goto_first_diagnostic(diagnostics)
 
             return false
         end
@@ -60,14 +76,15 @@ vim.api.nvim_create_autocmd("Filetype", {
         end
 
         local function show_assembly()
+            local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+
             if vim.b.current_tick2 ~= vim.b.changedtick then
-                if vim.tbl_isempty(vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })) then
+                if vim.tbl_isempty(diagnostics) then
                     vim.cmd("silent! write")
                     vim.fn.system(cmd_assemble)
                     vim.b.current_tick2 = vim.b.changedtick
                 else
-                    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
-                    vim.api.nvim_win_set_cursor(0, { diagnostics[1].lnum + 1, diagnostics[1].col })
+                    goto_first_diagnostic(diagnostics)
                     return
                 end
             end
@@ -125,7 +142,8 @@ vim.api.nvim_create_autocmd({ "TermOpen" }, {
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
         vim.diagnostic.config({
-            virtual_text = false,
+            -- virtual_text = false,
+            virtual_text = { current_line = true },
             severity_sort = true,
             float = { border = "rounded" },
             signs = {
