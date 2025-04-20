@@ -27,6 +27,7 @@ vim.api.nvim_create_autocmd("Filetype", {
         local ext = vim.fn.expand("%:e")
         local cmd_compile = string.format("%s %s -o %s %s", compiler, flags, outfile, infile)
         local cmd_assemble = string.format("%s %s -S -o %s %s", compiler, flags, asm_file, infile)
+        local data = nil
 
         local function goto_first_diagnostic(diagnostics)
             local col = diagnostics[1].col
@@ -68,11 +69,58 @@ vim.api.nvim_create_autocmd("Filetype", {
                 vim.cmd.terminal()
                 vim.defer_fn(function()
                     -- to prevent race conditions
+                    local out = outfile
+                    if data ~= nil then
+                        out = outfile .. " < " .. data
+                    end
                     if vim.b.terminal_job_id then
-                        vim.api.nvim_chan_send(vim.b.terminal_job_id, outfile .. "\n")
+                        vim.api.nvim_chan_send(vim.b.terminal_job_id, out .. "\n")
                     end
                 end, 50)
             end
+        end
+
+        local function add_data_file()
+            local function scan_dir(dir)
+                local handle = io.popen('find "' .. dir .. '" -type f 2>/dev/null')
+                if not handle then return {} end
+                local result = {}
+                for file in handle:lines() do
+                    table.insert(result, file)
+                end
+                handle:close()
+                return result
+            end
+            local base = vim.fn.getcwd() .. "/dat"
+            local files = scan_dir(base)
+            if vim.tbl_isempty(files) then
+                vim.notify("No files found in: " .. base, vim.log.levels.WARN)
+                return
+            end
+
+            vim.ui.select(files, {
+                prompt = 'Select a file to send to terminal:',
+            }, function(choice)
+                if choice then
+                    data = choice
+                end
+            end)
+        end
+
+        local function remove_data_file()
+            if data == nil then
+                vim.notify("No data file has been added.")
+                return
+            end
+
+            vim.ui.select({ "Yes", "No" }, {
+                prompt = "Do you want to remove data file for this source code?",
+            }, function(choice)
+                if choice == "Yes" then
+                    data = nil
+                    vim.notify("Data file has been removed.")
+                end
+            end)
         end
 
         local function show_assembly()
@@ -122,6 +170,8 @@ vim.api.nvim_create_autocmd("Filetype", {
         vim.keymap.set("n", "<leader>rc", compile, { buffer = true, noremap = true })
         vim.keymap.set("n", "<leader>rr", run, { buffer = true, noremap = true })
         vim.keymap.set("n", "<leader>ra", show_assembly, { buffer = true, noremap = true })
+        vim.keymap.set("n", "<leader>fa", add_data_file, { buffer = true, noremap = true })
+        vim.keymap.set("n", "<leader>fr", remove_data_file, { buffer = true, noremap = true })
     end,
 })
 

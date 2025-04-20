@@ -1,6 +1,6 @@
 return {
     "saghen/blink.cmp",
-    event = {"InsertEnter"},
+    event = { "InsertEnter" },
     build = "cargo +nightly build --release",
 
     ---@module 'blink.cmp'
@@ -8,7 +8,12 @@ return {
     opts = {
         completion = {
             accept = { auto_brackets = { enabled = false } },
-            list = { selection = { preselect = true, auto_insert = false } },
+            list = {
+                selection = {
+                    preselect = true,
+                    auto_insert = false
+                }
+            },
             menu = {
                 border = "rounded",
                 scrollbar = false,
@@ -16,9 +21,13 @@ return {
                     align_to = "label",
                     padding = 1,
                     gap = 2,
-                    columns = { { "kind_icon" }, { "label" }, { "kind" }},
+                    columns = { { "kind_icon" }, { "label" }, { "kind" } },
                 },
             },
+        },
+
+        fuzzy = {
+            sorts = { "exact", "score", "sort_text" }
         },
 
         keymap = {
