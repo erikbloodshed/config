@@ -28,6 +28,7 @@ vim.opt.rtp = vim.opt.rtp ^ lazypath
 
 require("autocmds")
 require("options")
+require("picker")
 
 require("lazy").setup({
     spec = "plugins",

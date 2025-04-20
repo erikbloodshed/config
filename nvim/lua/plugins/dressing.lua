@@ -14,7 +14,7 @@ return {
             },
         },
         select = {
-            enabled = true,
+            enabled = false,
             backend = { "nui" },
         },
     },
