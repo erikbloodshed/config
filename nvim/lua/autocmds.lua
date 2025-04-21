@@ -99,7 +99,7 @@ vim.api.nvim_create_autocmd("Filetype", {
             end
 
             vim.ui.select(files, {
-                prompt = 'Select a file to send to terminal:',
+                prompt = 'Select data input file:',
             }, function(choice)
                 if choice then
                     data = choice
