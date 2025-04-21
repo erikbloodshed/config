@@ -1,5 +1,6 @@
 return {
     "erikbloodshed/dressing.nvim",
+    enabled = false,
     events = "VeryLazy",
     opts = {
         input = {
