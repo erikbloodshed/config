@@ -14,11 +14,6 @@ local function under_cursor(_)
     }
 end
 
-local function is_valid_varname(name)
-    -- Must start with a letter or underscore, followed by letters, numbers, or underscores
-    return name:match("^[A-Za-z_][A-Za-z0-9_]*$") ~= nil
-end
-
 local function input(opts, on_confirm, win_config)
     local prompt = opts.prompt or "Input: "
     local default = opts.default or ""
@@ -57,33 +52,25 @@ local function input(opts, on_confirm, win_config)
     vim.cmd("startinsert")
     vim.api.nvim_win_set_cursor(window, { 1, vim.str_utfindex(default) + 1 })
 
-    local function close(cancel)
-        on_confirm(cancel and nil or vim.api.nvim_buf_get_lines(buffer, 0, 1, false)[1])
-        vim.cmd("stopinsert")
-        vim.api.nvim_win_close(window, true)
-    end
+    -- Enter to confirm
+	vim.keymap.set({ "n", "i", "v" }, "<cr>", function()
+		local lines = vim.api.nvim_buf_get_lines(buffer, 0, 1, false)
+		vim.cmd("stopinsert")
+		on_confirm(lines[1])
+		vim.api.nvim_win_close(window, true)
+	end, { buffer = buffer })
 
-    vim.keymap.set("n", "<esc>", function() close(true) end, { buffer = buffer })
-    vim.keymap.set("n", "q", function() close(true) end, { buffer = buffer })
-    vim.keymap.set({ "n", "i", "v" }, "<CR>", function()
-        local lines = vim.api.nvim_buf_get_lines(buffer, 0, 1, false)
-        local input_value = lines[1]
-        vim.cmd("stopinsert")
-        vim.api.nvim_win_close(window, true)
-
-        input_value = input_value and vim.trim(input_value) or ""
-
-        if input_value == "" or input_value == default then
-            return -- ignore empty or no-op rename
-        end
-
-        if not is_valid_varname(input_value) then
-            vim.notify("Invalid variable name: '" .. input_value .. "'", vim.log.levels.ERROR)
-            return
-        end
-
-        on_confirm(input_value)
-    end, { buffer = buffer })
+	-- Esc or q to close
+	vim.keymap.set("n", "<esc>", function()
+		on_confirm(nil)
+		vim.cmd("stopinsert")
+		vim.api.nvim_win_close(window, true)
+	end, { buffer = buffer })
+	vim.keymap.set("n", "q", function()
+		on_confirm(nil)
+		vim.cmd("stopinsert")
+		vim.api.nvim_win_close(window, true)
+	end, { buffer = buffer })
 end
 
 vim.ui.input = function(opts, on_confirm)
