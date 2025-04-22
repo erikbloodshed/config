@@ -105,13 +105,12 @@ vim.api.nvim_create_autocmd("Filetype", {
                 return
             end
 
-            vim.ui.select(files, {
-                prompt = 'Select data input file:',
-            }, function(choice)
-                if choice then
-                    data = choice
-                end
-            end)
+            vim.ui.select(files, { prompt = 'Select data input file:' },
+                function(choice)
+                    if choice then
+                        data = choice
+                    end
+                end)
         end
 
         local function remove_data_file()
