@@ -30,6 +30,7 @@ require("autocmds")
 require("options")
 require("picker")
 require("input")
+require("cpp_utils")
 
 require("lazy").setup({
     spec = "plugins",
