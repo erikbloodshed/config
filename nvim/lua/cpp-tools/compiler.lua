@@ -1,0 +1,45 @@
+local M = {}
+
+local function buffer_hash()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local text = table.concat(lines, "\n")
+    return vim.fn.sha256(text)
+end
+
+function M.get_compile_flags(filename, fallback)
+    local path = vim.fs.find(filename, {
+        upward = true,
+        type = "file",
+        path = vim.fn.expand("%:p:h"),
+        stop = vim.fn.expand("~"),
+    })[1]
+    if path then
+        return "@" .. path
+    end
+    return fallback
+end
+
+function M.compile(compiler, flags, outfile, infile, ext)
+    if ext == "h" or ext == "hpp" then
+        return false
+    end
+
+    local diagnostics = vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
+    if not vim.tbl_isempty(diagnostics) then
+        local d = diagnostics[1]
+        local line = vim.api.nvim_buf_get_lines(0, d.lnum, d.lnum + 1, false)[1] or ""
+        vim.api.nvim_win_set_cursor(0, { d.lnum + 1, math.min(d.col, #line) })
+        return false
+    end
+
+    local hash = buffer_hash()
+    if vim.b.last_cpp_hash == hash then
+        return true
+    end
+
+    vim.system({ compiler, flags, "-o", outfile, infile })
+
+    return true
+end
+
+return M

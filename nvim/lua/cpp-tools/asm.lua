@@ -1,16 +1,17 @@
-local diagnostics = require("user.cpp.diagnostics")
-
 local M = {}
 
 function M.show(compiler, flags, asm_file, infile)
-    local diagnostics_list = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
-    if vim.b.current_tick2 ~= vim.b.changedtick then
-        if vim.tbl_isempty(diagnostics_list) then
+    local diagnostics = vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
+
+    if vim.b.current_tick ~= vim.b.changedtick then
+        if vim.tbl_isempty(diagnostics) then
             vim.cmd("silent! write")
-            vim.fn.system(string.format("%s %s -S -o %s %s", compiler, flags, asm_file, infile))
-            vim.b.current_tick2 = vim.b.changedtick
+            vim.system({ compiler, flags, "-S", "-o", asm_file, infile }):wait()
+            vim.b.current_tick = vim.b.changedtick
         else
-            diagnostics.goto_first(diagnostics_list)
+            local d = diagnostics[1]
+            local line = vim.api.nvim_buf_get_lines(0, d.lnum, d.lnum + 1, false)[1] or ""
+            vim.api.nvim_win_set_cursor(0, { d.lnum + 1, math.min(d.col, #line) })
             return
         end
     end
@@ -21,8 +22,8 @@ function M.show(compiler, flags, asm_file, infile)
     vim.bo[buf].bufhidden = "wipe"
     vim.bo[buf].swapfile = false
     vim.bo[buf].filetype = "asm"
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, asm_content)
 
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, asm_content)
     vim.api.nvim_open_win(buf, true, {
         relative = "editor",
         width = math.floor(vim.o.columns * 0.8),
