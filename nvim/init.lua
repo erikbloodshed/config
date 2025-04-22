@@ -30,7 +30,7 @@ require("autocmds")
 require("options")
 require("picker")
 require("input")
-require("cpp_utils")
+-- require("cpp_utils")
 
 require("lazy").setup({
     spec = "plugins",
@@ -63,3 +63,4 @@ require("lazy").setup({
 
 vim.lsp.enable({"basedpyright", "clangd", "luals"})
 vim.cmd.colorscheme("tokyonight")
+require("user.cpp").setup()
