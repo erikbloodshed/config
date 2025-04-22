@@ -1,38 +1,27 @@
 vim.api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
 
----@class CustomPicker
----@field items table[]
----@field win integer
----@field buf integer
----@field selected integer
----@field actions table
----@field on_close function
-local Picker = {}
-Picker.__index = Picker
-
-function Picker:close()
-    if vim.api.nvim_win_is_valid(self.win) then
-        vim.api.nvim_win_close(self.win, true)
+local function close_picker(picker)
+    if vim.api.nvim_win_is_valid(picker.win) then
+        vim.api.nvim_win_close(picker.win, true)
     end
-    if vim.api.nvim_buf_is_valid(self.buf) then
-        vim.api.nvim_buf_delete(self.buf, { force = true })
+    if vim.api.nvim_buf_is_valid(picker.buf) then
+        vim.api.nvim_buf_delete(picker.buf, { force = true })
     end
 end
 
-function Picker:update_highlight()
-    vim.api.nvim_buf_clear_namespace(self.buf, self.ns, 0, -1)
-    vim.api.nvim_buf_add_highlight(self.buf, self.ns, "CustomPickerSelection", self.selected - 1, 0, -1)
+local function update_highlight(picker)
+    vim.api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
+    vim.api.nvim_buf_add_highlight(picker.buf, picker.ns, "CustomPickerSelection", picker.selected - 1, 0, -1)
 end
 
-function Picker:move(delta)
-    local old_idx = self.selected
-    local new_idx = math.max(1, math.min(old_idx + delta, #self.items))
-    self.selected = new_idx
-    vim.api.nvim_win_set_cursor(self.win, { new_idx, 0 })
-    self:update_highlight()
+local function move_picker(picker, delta)
+    local count = #picker.items
+    local new_idx = (picker.selected - 1 + delta) % count + 1
+    picker.selected = new_idx
+    vim.api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
+    update_highlight(picker)
 end
 
----@param opts {items: table[], title: string, actions: table, on_close: function}
 local function pick(opts)
     local lines = {}
     local max_width = 0
@@ -62,7 +51,7 @@ local function pick(opts)
         title = opts.title or "Select",
     })
 
-    local picker = setmetatable({
+    local picker = {
         buf = buf,
         win = win,
         ns = vim.api.nvim_create_namespace("custom_picker"),
@@ -70,35 +59,34 @@ local function pick(opts)
         selected = 1,
         actions = opts.actions or {},
         on_close = opts.on_close or function() end,
-    }, Picker)
+    }
 
-    picker:update_highlight()
-
+    update_highlight(picker)
     vim.api.nvim_win_set_cursor(win, { 1, 0 })
 
-    vim.keymap.set("n", "j", function() picker:move(1) end, { buffer = buf, nowait = true })
-    vim.keymap.set("n", "k", function() picker:move(-1) end, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
+
     vim.keymap.set("n", "<CR>", function()
         if picker.actions.confirm then
             picker.actions.confirm(picker, picker.items[picker.selected])
         else
-            picker:close()
+            close_picker(picker)
         end
     end, { buffer = buf })
 
-    vim.keymap.set("n", "q", function()
-        picker:close()
+    local function cancel()
+        close_picker(picker)
         picker.on_close()
-    end, { buffer = buf })
+    end
 
-    vim.keymap.set("n", "<Esc>", function()
-        picker:close()
-        picker.on_close()
-    end, { buffer = buf })
+    vim.keymap.set("n", "q", cancel, { buffer = buf })
+    vim.keymap.set("n", "<Esc>", cancel, { buffer = buf })
 
     return picker
 end
 
+-- Override vim.ui.select
 vim.ui.select = function(items, opts, on_choice)
     opts = opts or {}
 
@@ -121,7 +109,7 @@ vim.ui.select = function(items, opts, on_choice)
             confirm = function(picker, picked)
                 if completed then return end
                 completed = true
-                picker:close()
+                close_picker(picker)
                 vim.schedule(function()
                     on_choice(picked.item, picked.idx)
                 end)

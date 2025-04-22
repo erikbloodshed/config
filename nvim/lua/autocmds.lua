@@ -91,7 +91,14 @@ vim.api.nvim_create_autocmd("Filetype", {
                 handle:close()
                 return result
             end
-            local base = vim.fn.getcwd() .. "/dat"
+
+            local base = vim.fs.find("dat", {
+                upward = true,
+                type = "directory",
+                path = vim.fn.expand("%:p:h"),
+                stop = vim.fn.expand("~"),
+            })[1]
+
             local files = scan_dir(base)
             if vim.tbl_isempty(files) then
                 vim.notify("No files found in: " .. base, vim.log.levels.WARN)
