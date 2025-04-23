@@ -24,7 +24,7 @@ function M.setup(user_opts)
             local ext = vim.fn.expand("%:e")
             local data = { nil }
 
-            keymaps.set_keymaps({
+            keymaps.initialize({
                 keymaps = cfg.keymaps,
                 compiler = compiler,
                 flags = flags,

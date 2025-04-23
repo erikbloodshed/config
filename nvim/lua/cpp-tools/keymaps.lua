@@ -5,7 +5,7 @@ local runner = require("cpp-tools.runner")
 
 local M = {}
 
-function M.set_keymaps(opts)
+function M.initialize(opts)
     local map_opts = { buffer = true, noremap = true }
 
     vim.keymap.set("n", opts.keymaps.compile, function()
