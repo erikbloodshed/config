@@ -3,11 +3,11 @@ local M = {}
 function M.show(compiler, flags, asm_file, infile)
     local diagnostics = vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
 
-    if vim.b.current_tick ~= vim.b.changedtick then
+    if vim.b.current_tick2 ~= vim.b.changedtick then
         if vim.tbl_isempty(diagnostics) then
             vim.cmd("silent! write")
             vim.system({ compiler, flags, "-S", "-o", asm_file, infile }):wait()
-            vim.b.current_tick = vim.b.changedtick
+            vim.b.current_tick2 = vim.b.changedtick
         else
             local d = diagnostics[1]
             local line = vim.api.nvim_buf_get_lines(0, d.lnum, d.lnum + 1, false)[1] or ""

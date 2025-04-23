@@ -12,8 +12,8 @@ function M.setup(user_opts)
         pattern = { "c", "cpp" },
         callback = function()
             vim.opt_local.cinkeys:remove(":")
-            vim.opt_local.cindent = true
-            vim.b.current_tick = 0
+            vim.b.current_tick1 = 0
+            vim.b.current_tick2 = 0
 
             local compiler = vim.bo.filetype == "cpp" and cfg.compiler_cpp or cfg.compiler_c
             local flags = compiler_utils.get_compile_flags(".compile_flags",

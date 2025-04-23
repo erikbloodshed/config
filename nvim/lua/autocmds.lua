@@ -1,3 +1,4 @@
+
 vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "qf", "help", "query" },
     callback = function(args)
