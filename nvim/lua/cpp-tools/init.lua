@@ -1,13 +1,10 @@
-local Config = require('cpp-tools.config')
-local BuildTask = require('cpp-tools.build_task')
-
 local buffer_tasks = {}
-local config_instance = Config.new({}) -- Create a Config instance
+local config_instance = require("cpp-tools.config").new() -- Create a Config instance
 
 local function get_buffer_task(bufnr)
     bufnr = bufnr or 0
     if not buffer_tasks[bufnr] then
-        buffer_tasks[bufnr] = BuildTask.new(config_instance)
+        buffer_tasks[bufnr] = require("cpp-tools.build_task").new(config_instance)
     end
     return buffer_tasks[bufnr]
 end
