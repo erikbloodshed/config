@@ -1,5 +1,4 @@
 local utils = require("cpp-tools.utils")
-local CompileTask = require("cpp-tools.compile_task")
 local RunTask = require("cpp-tools.run_task")
 local AssemblyTask = require("cpp-tools.assembly_task")
 local DataSelectorTask = require("cpp-tools.data_selector")
@@ -10,7 +9,6 @@ BuildTask.__index = BuildTask
 function BuildTask.new(config)
     local self = setmetatable({}, BuildTask)
     self.config = config
-    self.compile_task = CompileTask.new(config)
     self.run_task = RunTask.new(config)
     self.assembly_task = AssemblyTask.new(config)
     self.data_select_task = DataSelectorTask.new(config) -- Create an instance!
@@ -21,7 +19,23 @@ function BuildTask.new(config)
 end
 
 function BuildTask:compile()
-    return self.compile_task:compile()
+    local compiler = self.config:get("compiler")
+    local flags = utils.get_compile_flags(".compile_flags")
+    local outfile = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
+    local infile = vim.api.nvim_buf_get_name(0)
+    local cmd_compile = self.config:get("compile_command")
+        or string.format("%s %s -o %s %s", compiler, flags, outfile, infile)
+
+    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+
+    if vim.tbl_isempty(diagnostics) then
+        vim.cmd("!" .. cmd_compile)
+        return true
+    end
+
+    utils.goto_first_diagnostic(diagnostics)
+
+    return false
 end
 
 function BuildTask:run()
