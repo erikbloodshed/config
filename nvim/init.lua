@@ -62,5 +62,4 @@ require("lazy").setup({
 
 vim.lsp.enable({"basedpyright", "clangd", "luals"})
 vim.cmd.colorscheme("tokyonight")
--- require("cpp-tools").setup()
 require("mycompiler")
