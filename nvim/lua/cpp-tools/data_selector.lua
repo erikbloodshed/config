@@ -7,26 +7,9 @@ function DataSelector.new(config)
     return self
 end
 
-function DataSelector:scan_dir(dir)
-    local handle = io.popen('find "' .. dir .. '" -type f 2>/dev/null')
-    if not handle then
-        vim.notify("Failed to scan directory: " .. dir, vim.log.levels.ERROR)
-        return {}
-    end
-    local result = {}
-    for file in handle:lines() do
-        table.insert(result, file)
-    end
-    local ok, err = handle:close()  -- Capture return values from handle:close()
-    if not ok then
-        vim.notify("Error closing file handle: " .. err, vim.log.levels.ERROR)
-    end
-    return result
-end
-
 function DataSelector:add(task)
     local base = vim.fn.getcwd() .. "/" .. self.config:get("data_subdirectory")
-    local files = self:scan_dir(base)
+    local files = require("cpp-tools.utils").scan_dir(base)
     if vim.tbl_isempty(files) then
         vim.notify("No files found in: " .. base, vim.log.levels.WARN)
         return

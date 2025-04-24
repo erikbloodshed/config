@@ -1,3 +1,4 @@
+local utils = require("cpp-tools.utils")
 local CompileTask = require("cpp-tools.compile_task")
 local RunTask = require("cpp-tools.run_task")
 local AssemblyTask = require("cpp-tools.assembly_task")
@@ -20,30 +21,20 @@ function BuildTask.new(config)
 end
 
 function BuildTask:compile()
-    local success = self.compile_task:compile()
-    if success then
-        self.last_compiled_hash = self:get_buffer_hash()
-    end
-    return success
+    return self.compile_task:compile()
 end
 
 function BuildTask:run()
-    local success = self.run_task:run(self.last_compiled_hash)
-    if not success then
-        if self:compile() then
-            self.run_task:run(self.last_compiled_hash)
-        end
+    local hash = utils.get_buffer_hash()
+    if self.last_compiled_hash ~= hash then
+        if not self:compile() then return end
+        self.last_compiled_hash = hash
     end
+    self.run_task:run()
 end
 
 function BuildTask:show_assembly()
     self.assembly_task:show_assembly()
-end
-
-function BuildTask:get_buffer_hash()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
-    local content = table.concat(lines, "\n")
-    return vim.fn.sha256(content)
 end
 
 function BuildTask:set_data_file(file)
