@@ -24,18 +24,17 @@ function BuildTask:compile()
 
     if self.last_compiled_hash ~= hash then
         success = utils.compile(function()
-            local cmd_compile = self.config:get("compile_command") or
+            vim.cmd("!" .. self.config:get("compile_command") or
                 string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
-            vim.cmd("!" .. cmd_compile)
+            )
         end)
 
         if success then
             self.last_compiled_hash = hash
         end
-    else
-        vim.api.nvim_echo({ { "Info", "Todo" }, { ": Source code is already compiled.", "Normal" }, }, true, {})
     end
 
+    vim.notify("Source code is already compiled.", vim.log.levels.WARN)
     return success
 end
 
