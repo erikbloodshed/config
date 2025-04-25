@@ -1,15 +1,5 @@
 local M = {}
 
-M.compile = function(callback)
-    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
-    if vim.tbl_isempty(diagnostics) then
-        callback()
-        return true
-    end
-    M.goto_first_diagnostic(diagnostics)
-    return false
-end
-
 M.scan_dir = function(dir)
     local handle = io.popen('find "' .. dir .. '" -type f 2>/dev/null')
     if not handle then

@@ -60,24 +60,6 @@ function Build:run()
     self.execution_handler:run(self.exe_file)
 end
 
--- function Build:assemble()
---     local hash = utils.get_buffer_hash()
---     local success = true
---
---     if self.last_assembled_hash ~= hash then
---         success = utils.compile(function()
---             vim.cmd("silent! write")
---             vim.fn.system(self.assemble_cmd)
---         end)
---
---         if success then
---             self.last_assembled_hash = hash
---         end
---     end
---
---     return success
--- end
-
 function Build:show_assembly()
     if not self:process("assemble", function()
             vim.cmd("silent! write")
