@@ -1,17 +1,12 @@
 local M = {}
 
-M.compile = function(cmd, fallback)
-    local cmd_compile = fallback or cmd
-
+M.compile = function(command_compile)
     local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
-
     if vim.tbl_isempty(diagnostics) then
-        vim.cmd("!" .. cmd_compile)
+        command_compile()
         return true
     end
-
     M.goto_first_diagnostic(diagnostics)
-
     return false
 end
 

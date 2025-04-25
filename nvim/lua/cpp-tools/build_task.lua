@@ -1,8 +1,6 @@
 local utils = require("cpp-tools.utils")
 local RunTask = require("cpp-tools.run_task")
-local AssemblyTask = require("cpp-tools.assembly_task")
 local DataSelectorTask = require("cpp-tools.data_selector")
-local CompileTask = require("cpp-tools.compile_task")
 
 local BuildTask = {}
 BuildTask.__index = BuildTask
@@ -10,24 +8,22 @@ BuildTask.__index = BuildTask
 function BuildTask.new(config)
     local self = setmetatable({}, BuildTask)
     self.config = config
-    self.compile_task = CompileTask.new(config)
     self.run_task = RunTask.new(config)
-    self.assembly_task = AssemblyTask.new(config)
     self.data_select_task = DataSelectorTask.new(config) -- Create an instance!
     self.last_compiled_hash = nil
     self.last_assembled_hash = nil
     self.data_file = nil
+    self.flags = utils.get_compile_flags(".compile_flags")
+    self.exe_file = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
+    self.asm_file = self.exe_file .. ".s"
+    self.infile = vim.api.nvim_buf_get_name(0)
     return self
 end
 
 function BuildTask:compile()
-    local args = {
-        compiler = self.config:get("compiler"),
-        flags = utils.get_compile_flags(".compile_flags"),
-        outfile = self.config:get("output_directory") .. vim.fn.expand("%:t:r"),
-        infile = vim.api.nvim_buf_get_name(0)
-    }
-    return self.compile_task:compile(args, function(cmd) vim.cmd("!" .. cmd) end)
+    local cmd_compile = self.config:get("assemble_command") or
+        string.format("%s %s -o %s %s", self.config:get("compiler"), self.flags, self.exe_file, self.infile)
+    return utils.compile(function() vim.cmd("!" .. cmd_compile) end)
 end
 
 function BuildTask:run()
@@ -40,13 +36,9 @@ function BuildTask:run()
 end
 
 function BuildTask:assemble()
-    local args = {
-        compiler = self.config:get("compiler"),
-        flags = utils.get_compile_flags(".compile_flags") .. " -S",
-        outfile = self.config:get("output_directory") .. vim.fn.expand("%:t:r") .. ".s",
-        infile = vim.api.nvim_buf_get_name(0)
-    }
-    return self.compile_task:compile(args, function(cmd) vim.fn.system(cmd) end)
+    local cmd_assemble = self.config:get("assemble_command") or
+        string.format("%s %s -S -o %s %s", self.config:get("compiler"), self.flags, self.asm_file, self.infile)
+    return self.compile_task:compile(function() vim.fn.system(cmd_assemble) end)
 end
 
 function BuildTask:show_assembly()
