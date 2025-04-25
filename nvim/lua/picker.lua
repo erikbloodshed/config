@@ -24,14 +24,14 @@ end
 
 local function pick(opts)
     local lines = {}
-    local max_width = 0
+    local max_width = string.len(opts.title)
     for _, item in ipairs(opts.items) do
         local line = item.text or tostring(item)
         table.insert(lines, line)
-        max_width = math.max(max_width, vim.fn.strdisplaywidth(line))
+        -- max_width = math.max(max_width, vim.fn.strdisplaywidth(line) + 10)
     end
 
-    local padding = 2
+    local padding = 4
     local width = math.min(max_width + padding, vim.o.columns - 4)
     local height = math.min(#lines, 10)
     local row = math.floor((vim.o.lines - height) / 2)
@@ -49,6 +49,7 @@ local function pick(opts)
         border = "rounded",
         style = "minimal",
         title = opts.title or "Select",
+        title_pos = "center"
     })
 
     local picker = {
@@ -124,3 +125,4 @@ vim.ui.select = function(items, opts, on_choice)
         end,
     })
 end
+

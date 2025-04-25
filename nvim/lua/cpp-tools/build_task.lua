@@ -1,6 +1,5 @@
 local utils = require("cpp-tools.utils")
-local RunTask = require("cpp-tools.run_task")
-local DataSelectorTask = require("cpp-tools.data_selector")
+local ExecutionHandler = require("cpp-tools.execution_handler")
 
 local BuildTask = {}
 BuildTask.__index = BuildTask
@@ -8,11 +7,9 @@ BuildTask.__index = BuildTask
 function BuildTask.new(config)
     local self = setmetatable({}, BuildTask)
     self.config = config
-    self.run_task = RunTask.new(config)
-    self.data_select_task = DataSelectorTask.new(config) -- Create an instance!
+    self.execution_handler = ExecutionHandler.new(config)
     self.last_compiled_hash = nil
     self.last_assembled_hash = nil
-    self.data_file = nil
     self.flags = utils.get_compile_flags(".compile_flags")
     self.exe_file = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
     self.asm_file = self.exe_file .. ".s"
@@ -36,31 +33,32 @@ function BuildTask:compile()
             self.last_compiled_hash = hash
         end
     else
-        vim.api.nvim_echo({ { "Warning", "WarningMsg" }, { ": Source code is already compiled.", "Normal" }, }, true, {})
+        vim.api.nvim_echo({ { "Info", "Todo" }, { ": Source code is already compiled.", "Normal" }, }, true, {})
     end
 
     return success
 end
 
 function BuildTask:run()
-    if not self:compile() then return end
-    self.run_task:run(self.exe_file)
+    if not self:compile() then
+        vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
+        return
+    end
+    self.execution_handler:run(self.exe_file)
 end
 
 function BuildTask:assemble()
     local hash = utils.get_buffer_hash()
     local success = true
 
-    if self.last_compiled_hash ~= hash then
+    if self.last_assembled_hash ~= hash then
         success = utils.compile(function()
-            vim.cmd("!" ..
-                self.config:get("assemble_command") or
-                string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
-            )
+            vim.fn.system(self.config:get("assemble_command") or
+                string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile))
         end)
 
         if success then
-            self.last_compiled_hash = hash
+            self.last_assembled_hash = hash
         end
     end
 
@@ -75,21 +73,12 @@ function BuildTask:show_assembly()
     utils.open(self.asm_file)
 end
 
-function BuildTask:set_data_file(file)
-    self.data_file = file
-    self.run_task:set_data_file(file)
-end
-
 function BuildTask:add_data_file()
-    self.data_select_task:add(self) -- Call method on instance
+    self.execution_handler:select_data_file() -- Call method on instance
 end
 
 function BuildTask:remove_data_file()
-    self.data_select_task:remove(self) -- Call method on instance
-end
-
-function BuildTask:get_data_file()
-    return self.data_file
+    self.execution_handler:remove_data_file() -- Call method on instance
 end
 
 return {
