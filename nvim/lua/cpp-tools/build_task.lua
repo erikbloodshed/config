@@ -17,38 +17,62 @@ function BuildTask.new(config)
     self.exe_file = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
     self.asm_file = self.exe_file .. ".s"
     self.infile = vim.api.nvim_buf_get_name(0)
+    self.compiler = self.config:get("compiler")
     return self
 end
 
 function BuildTask:compile()
-    local cmd_compile = self.config:get("assemble_command") or
-        string.format("%s %s -o %s %s", self.config:get("compiler"), self.flags, self.exe_file, self.infile)
-    return utils.compile(function() vim.cmd("!" .. cmd_compile) end)
+    local hash = utils.get_buffer_hash()
+    local success = true
+
+    if self.last_compiled_hash ~= hash then
+        success = utils.compile(function()
+            local cmd_compile = self.config:get("compile_command") or
+                string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
+            vim.cmd("!" .. cmd_compile)
+        end)
+
+        if success then
+            self.last_compiled_hash = hash
+        end
+    else
+        vim.api.nvim_echo({ { "Warning", "WarningMsg" }, { ": Source code is already compiled.", "Normal" }, }, true, {})
+    end
+
+    return success
 end
 
 function BuildTask:run()
-    local hash = utils.get_buffer_hash()
-    if self.last_compiled_hash ~= hash then
-        if not self:compile() then return end
-        self.last_compiled_hash = hash
-    end
-    self.run_task:run()
+    if not self:compile() then return end
+    self.run_task:run(self.exe_file)
 end
 
 function BuildTask:assemble()
-    local cmd_assemble = self.config:get("assemble_command") or
-        string.format("%s %s -S -o %s %s", self.config:get("compiler"), self.flags, self.asm_file, self.infile)
-    return self.compile_task:compile(function() vim.fn.system(cmd_assemble) end)
+    local hash = utils.get_buffer_hash()
+    local success = true
+
+    if self.last_compiled_hash ~= hash then
+        success = utils.compile(function()
+            vim.cmd("!" ..
+                self.config:get("assemble_command") or
+                string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
+            )
+        end)
+
+        if success then
+            self.last_compiled_hash = hash
+        end
+    end
+
+    return success
 end
 
 function BuildTask:show_assembly()
     local hash = utils.get_buffer_hash()
     if self.last_assembled_hash ~= hash then
         if not self:assemble() then return end
-        self.last_assembled_hash = hash
     end
-    local outfile = self.config:get("output_directory") .. vim.fn.expand("%:t:r") .. ".s"
-    utils.open(outfile)
+    utils.open(self.asm_file)
 end
 
 function BuildTask:set_data_file(file)

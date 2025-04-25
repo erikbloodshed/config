@@ -8,9 +8,7 @@ function RunTask.new(config)
     return self
 end
 
-function RunTask:run()
-    local outfile = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
-
+function RunTask:run(outfile)
     vim.cmd.terminal()
     vim.defer_fn(function()
         local out = outfile

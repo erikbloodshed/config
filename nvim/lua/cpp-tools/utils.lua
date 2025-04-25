@@ -1,9 +1,9 @@
 local M = {}
 
-M.compile = function(command_compile)
+M.compile = function(callback)
     local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
     if vim.tbl_isempty(diagnostics) then
-        command_compile()
+        callback()
         return true
     end
     M.goto_first_diagnostic(diagnostics)
