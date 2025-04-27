@@ -9,9 +9,9 @@ function Build.new(config, ft)
 
     self.config = config
     self.execution_handler = ExecutionHandler.new(config)
-
     self.compiler = self.config:get(ft).compiler
-    self.flags = utils.get_compile_flags(".compile_flags") or self.config:get(ft).default_flags
+    self.infile = utils.get_compile_flags(self.config:get("infile"))
+    self.flags =  self.infile or self.config:get(ft).fallback_flags
     self.exe_file = self.config:get("dir").output_directory .. vim.fn.expand("%:t:r")
     self.asm_file = self.exe_file .. ".s"
     self.infile = vim.api.nvim_buf_get_name(0)

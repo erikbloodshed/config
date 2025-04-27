@@ -38,19 +38,21 @@ M.goto_first_diagnostic = function(diagnostics)
     vim.api.nvim_win_set_cursor(0, { lnum + 1, col + 1 })
 end
 
-M.get_compile_flags = function(filename, fallback)
-    local path = vim.fs.find(filename, {
-        upward = true,
-        type = "file",
-        path = vim.fn.expand("%:p:h"),
-        stop = vim.fn.expand("~"),
-    })[1]
+M.get_compile_flags = function(filename)
+    if filename then
+        local path = vim.fs.find(filename, {
+            upward = true,
+            type = "file",
+            path = vim.fn.expand("%:p:h"),
+            stop = vim.fn.expand("~"),
+        })[1]
 
-    if path ~= nil then
-        return "@" .. path
+        if path ~= nil then
+            return "@" .. path
+        end
     end
 
-    return fallback
+    return nil
 end
 
 M.open = function(file)

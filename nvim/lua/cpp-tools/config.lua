@@ -10,14 +10,16 @@ function Config:init(options)
     self.config = {
         c = {
             compiler = "gcc",
-            default_flags = "-std=c18 -O2",
+            fallback_flags = "-std=c18 -O2",
+            infile = nil,
             compile_command = nil,
             assemble_command = nil,
         },
 
         cpp = {
             compiler = "g++",
-            default_flags = "-std=c++23 -O2",
+            fallback_flags = "-std=c++23 -O2",
+            infile = nil,
             compile_command = nil,
             assemble_command = nil,
         },
