@@ -26,11 +26,6 @@ end
 
 vim.opt.rtp = vim.opt.rtp ^ lazypath
 
-require("options")
-require("picker")
-require("input")
-require("autocmds")
-
 require("lazy").setup({
     spec = "plugins",
 
@@ -60,5 +55,10 @@ require("lazy").setup({
     },
 })
 
-vim.lsp.enable({"basedpyright", "clangd", "luals"})
 vim.cmd.colorscheme("tokyonight")
+
+require("options")
+require("autocmds")
+require("ui")
+
+vim.lsp.enable({"basedpyright", "clangd", "luals"})

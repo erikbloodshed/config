@@ -42,5 +42,5 @@ return {
             highlights["Directory"] = { fg = colors.blue, bold = true }
             highlights["NeoTreeRootName"] = { link = "Directory" }
         end,
-    },
+    }
 }

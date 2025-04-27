@@ -6,7 +6,7 @@ function Config.new(options)
     return self:init(options)
 end
 
-function Config:init(options)
+function Config:init(opts)
     self.config = {
         c = {
             compiler       = "gcc",
@@ -29,18 +29,14 @@ function Config:init(options)
             output_directory = "/tmp/",
         }
     }
-    if options then
-        self.config = vim.tbl_deep_extend('force', self.config, options)
+    if opts then
+        self.config = vim.tbl_deep_extend('force', self.config, opts)
     end
+
     return self
 end
 
-function Config:get(key)
-    return self.config[key]
-end
-
-function Config:set(key, value)
-    self.config[key] = value
-end
+function Config:get(key) return self.config[key] end
+function Config:set(key, value) self.config[key] = value end
 
 return Config
