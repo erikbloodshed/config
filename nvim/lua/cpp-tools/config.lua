@@ -26,7 +26,7 @@ function Config:init(options)
 
         dir = {
             data_directory   = "dat",
-            output_directory = "/tmp/",
+            output_directory = "/tmp",
         }
     }
     if options then

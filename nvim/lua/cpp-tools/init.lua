@@ -17,6 +17,7 @@ function M.setup(opts)
             vim.keymap.set("n", "<leader>ra", function() build:show_assembly() end, arg)
             vim.keymap.set("n", "<leader>fa", function() build:add_data_file() end, arg)
             vim.keymap.set("n", "<leader>fr", function() build:remove_data_file() end, arg)
+            vim.keymap.set({ "n", "i" }, "<F13>", function() build:get_build_info() end, arg)
         end,
     })
 end

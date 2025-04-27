@@ -1,29 +1,27 @@
 local utils = require("cpp-tools.utils")
-local ExecutionHandler = require("cpp-tools.execution_handler")
 
 local Build = {}
 Build.__index = Build
 
 function Build.new(config, ft)
-    local self = setmetatable({}, Build)
+    local self             = setmetatable({}, Build)
 
-    self.execution_handler = ExecutionHandler.new()
-    self.config = config
+    self.execution_handler = require("cpp-tools.execution_handler").new()
 
-    self.compiler          = self.config:get(ft).compiler
-    self.infile            = self.config:get(ft).infile
-    self.fallback_flags    = self.config:get(ft).fallback_flags
-    self.output_dir        = self.config:get("dir").output_directory
-    self.data_dir          = self.config:get("dir").data_directory
+    self.compiler          = config:get(ft).compiler
+    self.infile            = config:get(ft).infile
+    self.fallback_flags    = config:get(ft).fallback_flags
+    self.output_dir        = config:get("dir").output_directory
+    self.data_dir          = config:get("dir").data_directory
 
     self.flags             = utils.get_compile_flags(self.infile) or self.fallback_flags
-    self.exe_file          = self.output_dir .. vim.fn.expand("%:t:r")
+    self.exe_file          = self.output_dir .. "/" .. vim.fn.expand("%:t:r")
     self.asm_file          = self.exe_file .. ".s"
     self.infile            = vim.api.nvim_buf_get_name(0)
 
-    self.compile_cmd = self.config:get(ft).compile_command or
+    self.compile_cmd       = config:get(ft).compile_command or
         string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
-    self.assemble_cmd = self.config:get(ft).assemble_command or
+    self.assemble_cmd      = config:get(ft).assemble_command or
         string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
 
     self.hash              = { compile = nil, assemble = nil }
@@ -73,7 +71,7 @@ function Build:show_assembly()
         vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
         return
     end
-    utils.open(self.asm_file)
+    utils.open(string.format(" %s ", self.asm_file), utils.read_file(self.asm_file), "asm")
 end
 
 function Build:add_data_file()
@@ -85,9 +83,24 @@ function Build:remove_data_file()
 end
 
 function Build:get_build_info()
-    -- TODO
-end
+    local lines = {
+        "Compiler         : " .. self.compiler,
+        "Filetype         : " .. vim.bo.filetype,
+        "Source           : " .. self.infile,
+        "Fallback Flags   : " .. self.fallback_flags,
+        "Detected Flags   : " .. self.flags,
+        "Output Directory : " .. self.output_dir,
+        "Data Directory   : " .. self.data_dir,
+    }
 
+    local buf = utils.open(" Compile Info ", lines, "text")
+    for i, line in ipairs(lines) do
+        local col = line:find(":")
+        if col then
+            vim.api.nvim_buf_add_highlight(buf, -1, "Keyword", i - 1, 0, col - 1)
+        end
+    end
+end
 
 return {
     new = Build.new,
