@@ -1,5 +1,5 @@
 require("cpp-tools").setup({
     cpp = {
-        infile = ".compile_flags"
+        compile_opts = ".compile_flags"
     }
 })

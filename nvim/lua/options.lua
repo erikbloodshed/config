@@ -34,7 +34,7 @@ vim.wo.signcolumn = "yes"
 vim.wo.cursorline = true
 vim.wo.cursorlineopt = "both"
 
-vim.o.autowrite = true
+vim.o.autowrite = false
 vim.o.expandtab = true
 vim.o.shiftwidth = 4
 vim.o.smartindent = false

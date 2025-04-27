@@ -9,24 +9,24 @@ end
 function Config:init(options)
     self.config = {
         c = {
-            compiler         = "gcc",
-            fallback_flags   = "-std=c23 -O2",
-            infile           = nil,
-            compile_command  = nil,
-            assemble_command = nil,
+            compiler       = "gcc",
+            fallback_flags = "-std=c23 -O2",
+            compile_opts   = nil,
+            compile_cmd    = nil,
+            assemble_cmd   = nil,
         },
 
         cpp = {
-            compiler         = "g++",
-            fallback_flags   = "-std=c++23 -O2",
-            infile           = nil,
-            compile_command  = nil,
-            assemble_command = nil,
+            compiler       = "g++",
+            fallback_flags = "-std=c++23 -O2",
+            compile_opts   = nil,
+            compile_cmd    = nil,
+            assemble_cmd   = nil,
         },
 
         dir = {
-            data_directory   = "dat",
-            output_directory = "/tmp",
+            data_dir_name    = "dat",
+            output_directory = "/tmp/",
         }
     }
     if options then

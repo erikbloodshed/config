@@ -38,7 +38,7 @@ M.goto_first_diagnostic = function(diagnostics)
     vim.api.nvim_win_set_cursor(0, { lnum + 1, col + 1 })
 end
 
-M.get_compile_flags = function(filename)
+M.get_options_file = function(filename)
     if filename then
         local path = vim.fs.find(filename, {
             upward = true,
@@ -47,9 +47,24 @@ M.get_compile_flags = function(filename)
             stop = vim.fn.expand("~"),
         })[1]
 
-        if path ~= nil then
+        if path then
             return "@" .. path
         end
+    end
+
+    return nil
+end
+
+M.get_data_path = function(filename)
+    if filename then
+        local path = vim.fs.find(filename, {
+            upward = true,
+            type = "directory",
+            path = vim.fn.expand("%:p:h"),
+            stop = vim.fn.expand("~"),
+        })[1]
+
+        return path
     end
 
     return nil
@@ -104,6 +119,28 @@ M.open = function(title, lines, ft)
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf, noremap = true, nowait = true, silent = true })
 
     return buf
+end
+
+function M.get_modified_time(filepath)
+    local file_stats = vim.fn.getftime(filepath) -- `getftime` retrieves the file modification time
+    if file_stats > 0 then
+        return os.date("%Y-%B-%d %H:%M:%S", file_stats)
+    else
+        return "Unable to retrieve file modified time."
+    end
+end
+
+function M.get_creation_time(file)
+    local handle = io.popen("stat -c %W " .. file)  -- %W gives the creation (birth) time
+    if not handle then return "Could not open " .. file end
+    local result = handle:read("*a")
+    handle:close()
+    local creation_time = tonumber(result)
+    if creation_time then
+        return os.date("%Y-%B-%d %H:%M:%S", creation_time)
+    else
+        return "Unable to retrieve file creation time."
+    end
 end
 
 return M

@@ -34,9 +34,10 @@ function ExecutionHandler:run(exe)
 end
 
 -- Method to select and add a data file
-function ExecutionHandler:select_data_file(data_dir)
+function ExecutionHandler:select_data_file(data_path)
     -- Construct the path to the data directory
-    local base = vim.fn.getcwd() .. "/" .. data_dir
+    if not data_path then return end
+    local base = data_path
     -- Scan the directory for files
     local files = utils.scan_dir(base)
     -- Notify and return if no files are found

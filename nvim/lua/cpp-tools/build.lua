@@ -9,27 +9,33 @@ function Build.new(config, ft)
     self.execution_handler = require("cpp-tools.execution_handler").new()
 
     self.compiler          = config:get(ft).compiler
-    self.infile            = config:get(ft).infile
+    self.compile_opts      = config:get(ft).compile_opts
     self.fallback_flags    = config:get(ft).fallback_flags
     self.output_dir        = config:get("dir").output_directory
-    self.data_dir          = config:get("dir").data_directory
+    self.data_dir          = config:get("dir").data_dir_name
+    self.compile_cmd       = config:get(ft).compile_cmd
+    self.assemble_cmd      = config:get(ft).assemble_cmd
 
-    self.flags             = utils.get_compile_flags(self.infile) or self.fallback_flags
-    self.exe_file          = self.output_dir .. "/" .. vim.fn.expand("%:t:r")
+    self.options_file      = utils.get_options_file(self.compile_opts)
+    self.flags             = self.options_file or self.fallback_flags
+    self.exe_file          = self.output_dir .. vim.fn.expand("%:t:r")
     self.asm_file          = self.exe_file .. ".s"
     self.infile            = vim.api.nvim_buf_get_name(0)
-
-    self.compile_cmd       = config:get(ft).compile_command or
-        string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
-    self.assemble_cmd      = config:get(ft).assemble_command or
-        string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
-
+    self.data_path         = utils.get_data_path(self.data_dir)
     self.hash              = { compile = nil, assemble = nil }
+
+    self.cmp_command       = self.compile_cmd or
+        string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
+    self.asm_command       = self.assemble_cmd or
+        string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
 
     return self
 end
 
 function Build:process(key, callback)
+    if vim.bo.modified then
+        vim.cmd("silent! write")
+    end
     local buffer_hash = utils.get_buffer_hash()
     if self.hash[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
@@ -52,11 +58,13 @@ function Build:process(key, callback)
 end
 
 function Build:compile()
-    self:process("compile", function() vim.cmd("!" .. self.compile_cmd) end)
+    if self:process("compile", function() vim.fn.system(self.cmp_command) end) then
+        vim.notify("Compiled successfully.", vim.log.levels.INFO)
+    end
 end
 
 function Build:run()
-    if not self:process("compile", function() vim.cmd("!" .. self.compile_cmd) end) then
+    if not self:process("compile", function() vim.fn.system(self.cmp_command) end) then
         vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
         return
     end
@@ -64,9 +72,9 @@ function Build:run()
 end
 
 function Build:show_assembly()
+    vim.cmd("silent! write")
     if not self:process("assemble", function()
-            vim.cmd("silent! write")
-            vim.fn.system(self.assemble_cmd)
+            vim.fn.system(self.asm_command)
         end) then
         vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
         return
@@ -75,7 +83,7 @@ function Build:show_assembly()
 end
 
 function Build:add_data_file()
-    self.execution_handler:select_data_file(self.data_dir) -- Call method on instance
+    self.execution_handler:select_data_file(self.data_path) -- Call method on instance
 end
 
 function Build:remove_data_file()
@@ -84,13 +92,14 @@ end
 
 function Build:get_build_info()
     local lines = {
-        "Compiler         : " .. self.compiler,
         "Filetype         : " .. vim.bo.filetype,
+        "Compiler         : " .. self.compiler,
+        "Compile Flags    : " .. self.flags,
         "Source           : " .. self.infile,
-        "Fallback Flags   : " .. self.fallback_flags,
-        "Detected Flags   : " .. self.flags,
         "Output Directory : " .. self.output_dir,
-        "Data Directory   : " .. self.data_dir,
+        "Data Directory   : " .. (self.data_path or ""),
+        "Date Modified    : " .. utils.get_modified_time(self.infile),
+        "Date Created     : " .. utils.get_creation_time(self.infile)
     }
 
     local buf = utils.open(" Compile Info ", lines, "text")
