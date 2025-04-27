@@ -7,21 +7,26 @@ Build.__index = Build
 function Build.new(config, ft)
     local self = setmetatable({}, Build)
 
+    self.execution_handler = ExecutionHandler.new()
     self.config = config
-    self.execution_handler = ExecutionHandler.new(config)
-    self.compiler = self.config:get(ft).compiler
-    self.infile = utils.get_compile_flags(self.config:get(ft).infile)
-    self.flags =  self.infile or self.config:get(ft).fallback_flags
-    self.exe_file = self.config:get("dir").output_directory .. vim.fn.expand("%:t:r")
-    self.asm_file = self.exe_file .. ".s"
-    self.infile = vim.api.nvim_buf_get_name(0)
+
+    self.compiler          = self.config:get(ft).compiler
+    self.infile            = self.config:get(ft).infile
+    self.fallback_flags    = self.config:get(ft).fallback_flags
+    self.output_dir        = self.config:get("dir").output_directory
+    self.data_dir          = self.config:get("dir").data_directory
+
+    self.flags             = utils.get_compile_flags(self.infile) or self.fallback_flags
+    self.exe_file          = self.output_dir .. vim.fn.expand("%:t:r")
+    self.asm_file          = self.exe_file .. ".s"
+    self.infile            = vim.api.nvim_buf_get_name(0)
 
     self.compile_cmd = self.config:get(ft).compile_command or
         string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
     self.assemble_cmd = self.config:get(ft).assemble_command or
         string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
 
-    self.hash = { compile = nil, assemble = nil }
+    self.hash              = { compile = nil, assemble = nil }
 
     return self
 end
@@ -72,12 +77,17 @@ function Build:show_assembly()
 end
 
 function Build:add_data_file()
-    self.execution_handler:select_data_file() -- Call method on instance
+    self.execution_handler:select_data_file(self.data_dir) -- Call method on instance
 end
 
 function Build:remove_data_file()
     self.execution_handler:remove_data_file() -- Call method on instance
 end
+
+function Build:get_build_info()
+    -- TODO
+end
+
 
 return {
     new = Build.new,

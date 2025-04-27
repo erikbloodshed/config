@@ -7,23 +7,22 @@ local ExecutionHandler = {}
 ExecutionHandler.__index = ExecutionHandler
 
 -- Constructor for the handler
-function ExecutionHandler.new(config)
+function ExecutionHandler.new()
     local self = setmetatable({}, ExecutionHandler)
-    self.config = config
     self.data_file = nil -- Initialize data_file state within this handler
     return self
 end
 
 -- Method to run the compiled executable, potentially with a data file
-function ExecutionHandler:run(outfile)
+function ExecutionHandler:run(exe)
     -- Open a terminal window
     vim.cmd.terminal()
     -- Defer sending the command to give the terminal time to initialize
     vim.defer_fn(function()
-        local command = outfile
+        local command = exe
         -- Append input redirection if a data file is set
         if self.data_file ~= nil then
-            command = outfile .. " < " .. self.data_file
+            command = exe .. " < " .. self.data_file
         end
         -- Send the command to the terminal if the job ID exists
         if vim.b.terminal_job_id then
@@ -35,9 +34,9 @@ function ExecutionHandler:run(outfile)
 end
 
 -- Method to select and add a data file
-function ExecutionHandler:select_data_file()
+function ExecutionHandler:select_data_file(data_dir)
     -- Construct the path to the data directory
-    local base = vim.fn.getcwd() .. "/" .. self.config:get("dir").data_subdirectory
+    local base = vim.fn.getcwd() .. "/" .. data_dir
     -- Scan the directory for files
     local files = utils.scan_dir(base)
     -- Notify and return if no files are found

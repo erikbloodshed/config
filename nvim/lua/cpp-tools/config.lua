@@ -9,23 +9,23 @@ end
 function Config:init(options)
     self.config = {
         c = {
-            compiler = "gcc",
-            fallback_flags = "-std=c18 -O2",
-            infile = nil,
-            compile_command = nil,
+            compiler         = "gcc",
+            fallback_flags   = "-std=c23 -O2",
+            infile           = nil,
+            compile_command  = nil,
             assemble_command = nil,
         },
 
         cpp = {
-            compiler = "g++",
-            fallback_flags = "-std=c++23 -O2",
-            infile = nil,
-            compile_command = nil,
+            compiler         = "g++",
+            fallback_flags   = "-std=c++23 -O2",
+            infile           = nil,
+            compile_command  = nil,
             assemble_command = nil,
         },
 
         dir = {
-            data_subdirectory = "dat",
+            data_directory   = "dat",
             output_directory = "/tmp/",
         }
     }
@@ -41,11 +41,6 @@ end
 
 function Config:set(key, value)
     self.config[key] = value
-end
-
-function Config:setup(options)
-    options = options or {}
-    -- setup logic could be placed here if needed
 end
 
 return Config
