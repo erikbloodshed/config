@@ -1,1 +1,8 @@
-require("cpp-tools").setup()
+require("cpp-tools").setup({
+    c = {
+        compiler = "clang"
+    },
+    cpp = {
+        compiler = "clang++"
+    }
+})

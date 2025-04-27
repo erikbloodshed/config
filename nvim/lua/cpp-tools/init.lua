@@ -7,8 +7,9 @@ function M.setup(opts)
             vim.opt_local.cinkeys:remove(":")
             vim.opt_local.cindent = true
 
+            local ft = vim.bo.filetype
             local config = require("cpp-tools.config").new(opts)
-            local build = require("cpp-tools.build").new(config)
+            local build = require("cpp-tools.build").new(config, ft)
             local arg = { buffer = args.buf, noremap = true }
 
             vim.keymap.set("n", "<leader>rc", function() build:compile() end, arg)

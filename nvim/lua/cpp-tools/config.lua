@@ -3,22 +3,34 @@ Config.__index = Config
 
 function Config.new(options)
     local self = setmetatable({}, Config)
-
-    self.config = {
-        output_directory = "/tmp/",
-        data_subdirectory = "dat",
-        compiler = "g++",
-        default_flags = "-std=c++23 -O2",
-        compile_command = nil,
-        assemble_command = nil,
-    }
-
-    self.config = vim.tbl_deep_extend('force', self.config, options or {})
-    return self
+    return self:init(options)
 end
 
-function Config:setup(options)
-    options = options or {}
+function Config:init(options)
+    self.config = {
+        c = {
+            compiler = "gcc",
+            default_flags = "-std=c18 -O2",
+            compile_command = nil,
+            assemble_command = nil,
+        },
+
+        cpp = {
+            compiler = "g++",
+            default_flags = "-std=c++23 -O2",
+            compile_command = nil,
+            assemble_command = nil,
+        },
+
+        dir = {
+            data_subdirectory = "dat",
+            output_directory = "/tmp/",
+        }
+    }
+    if options then
+        self.config = vim.tbl_deep_extend('force', self.config, options)
+    end
+    return self
 end
 
 function Config:get(key)
@@ -29,7 +41,9 @@ function Config:set(key, value)
     self.config[key] = value
 end
 
-return {
-    new = Config.new,
-    config = Config.config,
-}
+function Config:setup(options)
+    options = options or {}
+    -- setup logic could be placed here if needed
+end
+
+return Config

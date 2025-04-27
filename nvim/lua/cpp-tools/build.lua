@@ -4,21 +4,21 @@ local ExecutionHandler = require("cpp-tools.execution_handler")
 local Build = {}
 Build.__index = Build
 
-function Build.new(config)
+function Build.new(config, ft)
     local self = setmetatable({}, Build)
 
     self.config = config
     self.execution_handler = ExecutionHandler.new(config)
 
-    self.compiler = self.config:get("compiler")
-    self.flags = utils.get_compile_flags(".compile_flags")
-    self.exe_file = self.config:get("output_directory") .. vim.fn.expand("%:t:r")
+    self.compiler = self.config:get(ft).compiler
+    self.flags = utils.get_compile_flags(".compile_flags") or self.config:get(ft).default_flags
+    self.exe_file = self.config:get("dir").output_directory .. vim.fn.expand("%:t:r")
     self.asm_file = self.exe_file .. ".s"
     self.infile = vim.api.nvim_buf_get_name(0)
 
-    self.compile_cmd = self.config:get("compile_command") or
+    self.compile_cmd = self.config:get(ft).compile_command or
         string.format("%s %s -o %s %s", self.compiler, self.flags, self.exe_file, self.infile)
-    self.assemble_cmd = self.config:get("assemble_command") or
+    self.assemble_cmd = self.config:get(ft).assemble_command or
         string.format("%s %s -S -o %s %s", self.compiler, self.flags, self.asm_file, self.infile)
 
     self.hash = { compile = nil, assemble = nil }

@@ -37,7 +37,7 @@ end
 -- Method to select and add a data file
 function ExecutionHandler:select_data_file()
     -- Construct the path to the data directory
-    local base = vim.fn.getcwd() .. "/" .. self.config:get("data_subdirectory")
+    local base = vim.fn.getcwd() .. "/" .. self.config:get("dir").data_subdirectory
     -- Scan the directory for files
     local files = utils.scan_dir(base)
     -- Notify and return if no files are found
