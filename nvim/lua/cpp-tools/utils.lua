@@ -50,9 +50,9 @@ M.get_compile_flags = function(filename)
         if path ~= nil then
             return "@" .. path
         end
+    else
+        return nil
     end
-
-    return nil
 end
 
 M.open = function(file)
