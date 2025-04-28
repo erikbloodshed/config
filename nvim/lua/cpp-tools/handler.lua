@@ -2,7 +2,7 @@ local utils = require("cpp-tools.utils")
 
 local M = {}
 
-M.compile = function(value, key, callback)
+M.compile = function(value, key, cmd)
     if vim.bo.modified then
         vim.cmd("silent! write")
     end
@@ -11,7 +11,7 @@ M.compile = function(value, key, callback)
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
         if vim.tbl_isempty(diagnostics) then
-            callback()
+            vim.fn.system(cmd)
             value[key] = buffer_hash
             return true
         end

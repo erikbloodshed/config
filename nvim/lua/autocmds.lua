@@ -13,8 +13,6 @@ vim.api.nvim_create_autocmd("Filetype", {
     end,
 })
 
-
-
 vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()

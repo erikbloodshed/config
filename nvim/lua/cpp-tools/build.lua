@@ -24,19 +24,13 @@ M.init = function(config)
     local assemble_command = table.concat({ compiler, flags, "-S -o", asm_file, infile }, " ")
 
     local function compile()
-        if handler.compile(hash, "compile",
-                function()
-                    vim.fn.system(compile_command)
-                end) then
+        if handler.compile(hash, "compile", compile_command) then
             vim.notify("Compiled successfully.", vim.log.levels.INFO)
         end
     end
 
     local function run()
-        if not handler.compile(hash, "compile",
-                function()
-                    vim.fn.system(compile_command)
-                end) then
+        if not handler.compile(hash, "compile", compile_command) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
         end
@@ -44,9 +38,7 @@ M.init = function(config)
     end
 
     local function show_assembly()
-        if not handler.compile("assemble", function()
-                vim.fn.system(assemble_command)
-            end) then
+        if not handler.compile(hash, "assemble", assemble_command) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
         end
