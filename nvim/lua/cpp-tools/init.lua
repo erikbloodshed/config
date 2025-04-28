@@ -4,9 +4,6 @@ function M.setup(opts)
     vim.api.nvim_create_autocmd("Filetype", {
         pattern = { "c", "cpp" },
         callback = function(args)
-            vim.opt_local.cinkeys:remove(":")
-            vim.opt_local.cindent = true
-
             local config = require("cpp-tools.config").init(opts)
             local build = require("cpp-tools.build").init(config)
             local arg = { buffer = args.buf, noremap = true }

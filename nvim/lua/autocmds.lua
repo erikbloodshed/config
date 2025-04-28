@@ -5,6 +5,16 @@ vim.api.nvim_create_autocmd("Filetype", {
     end,
 })
 
+vim.api.nvim_create_autocmd("Filetype", {
+    pattern = { "c", "cpp" },
+    callback = function()
+        vim.opt_local.cinkeys:remove(":")
+        vim.opt_local.cindent = true
+    end,
+})
+
+
+
 vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
