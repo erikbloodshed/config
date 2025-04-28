@@ -128,17 +128,85 @@ function M.get_modified_time(filepath)
     end
 end
 
+-- function M.get_creation_time(file)
+--     local handle = io.popen("stat -c %W " .. file)  -- %W gives the creation (birth) time
+--     if not handle then return "Could not open " .. file end
+--     local result = handle:read("*a")
+--     handle:close()
+--     local creation_time = tonumber(result)
+--     if creation_time then
+--         return os.date("%Y-%B-%d %H:%M:%S", creation_time)
+--     else
+--         return "Unable to retrieve file creation time."
+--     end
+-- end
+
+--- Attempts to retrieve the creation (birth) time of a file using the 'stat' command.
+-- WARNING: This method is highly dependent on the operating system and the filesystem.
+-- The '%W' format specifier is specific to GNU stat (common on Linux) and requires
+-- the filesystem to support recording the birth/creation time (e.g., ext4, XFS, Btrfs).
+-- It will likely NOT work correctly on macOS, Windows, or Linux filesystems that
+-- do not store creation time, potentially returning 0 or an error.
+--
+-- For a truly cross-platform solution, you would need to use OS-specific methods
+-- (e.g., Windows API calls, macOS GetFileInfo) which are not directly available
+-- in standard Lua and would require external libraries or different approaches.
+--
+-- @param file The path to the file.
+-- @return A formatted date string representing the creation time if successful and supported,
+--         or a descriptive error/status message otherwise.
 function M.get_creation_time(file)
-    local handle = io.popen("stat -c %W " .. file)  -- %W gives the creation (birth) time
-    if not handle then return "Could not open " .. file end
+    -- Construct the command to get the birth time as a Unix timestamp.
+    -- %W is for birth time (creation time) as seconds since Epoch (GNU stat).
+    local command = "stat -c %W " .. file
+    local handle = io.popen(command, "r") -- Open the pipe in read mode
+
+    if not handle then
+        -- io.popen failed to start the command. This could be due to permissions,
+        -- command not found, or other system issues.
+        return "Error: Could not execute stat command for file: " .. file
+    end
+
+    -- Read the entire output from the command.
     local result = handle:read("*a")
-    handle:close()
+
+    -- Close the handle and capture the exit status of the command.
+    -- The second return value from handle:close() is the exit status.
+    local success, _, exit_code = pcall(handle.close, handle) -- Use pcall in case close fails
+
+    if not success then
+        -- Closing the handle failed, which is unusual but possible.
+        return "Error: Failed to close stat command handle after execution."
+    end
+
+    -- Check the exit code of the stat command. A non-zero exit code
+    -- usually means the command failed (e.g., file not found, invalid option).
+    if exit_code ~= 0 then
+        -- Trim output for cleaner error message, though result might be empty or contain error text
+        local trimmed_result = result:gsub("^%s*(.-)%s*$", "%1")
+        if trimmed_result == "" then
+             return "Error: stat command failed (exit code " .. tostring(exit_code) .. "). File might not exist or command options unsupported."
+        else
+             return "Error: stat command failed (exit code " .. tostring(exit_code) .. "). Output: " .. trimmed_result
+        end
+    end
+
+    -- Trim any leading/trailing whitespace from the successful output
+    result = result:gsub("^%s*(.-)%s*$", "%1")
+
+    -- Attempt to convert the result to a number (the timestamp).
     local creation_time = tonumber(result)
-    if creation_time then
+
+    if creation_time and creation_time > 0 then
+        -- If conversion is successful and the timestamp is greater than 0,
+        -- format and return the date. A timestamp of 0 often indicates
+        -- that the birth time is not recorded on the filesystem.
         return os.date("%Y-%B-%d %H:%M:%S", creation_time)
     else
-        return "Unable to retrieve file creation time."
+        -- If conversion failed (output wasn't a number) or the timestamp was 0.
+        -- This indicates that stat -c %W did not provide a valid creation time.
+        -- This is common on filesystems/OS where birth time is not supported or stored.
+        return "Creation time not available or could not be retrieved for this file/filesystem using 'stat -c %W'."
     end
 end
-
 return M

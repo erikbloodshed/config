@@ -17,7 +17,7 @@ function Config:init(opts)
         },
 
         cpp = {
-            compiler       = "g++",
+            compiler       = "g++-15",
             fallback_flags = "-std=c++23 -O2",
             compile_opts   = nil,
             compile_cmd    = nil,
@@ -29,14 +29,17 @@ function Config:init(opts)
             output_directory = "/tmp/",
         }
     }
-    if opts then
-        self.config = vim.tbl_deep_extend('force', self.config, opts)
-    end
 
+    self.config = vim.tbl_deep_extend('force', self.config, opts or {})
     return self
 end
 
-function Config:get(key) return self.config[key] end
-function Config:set(key, value) self.config[key] = value end
+function Config:get(key)
+    return self.config[key]
+end
+
+function Config:set(key, value)
+    self.config[key] = value
+end
 
 return Config
