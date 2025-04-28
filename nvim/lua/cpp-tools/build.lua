@@ -1,20 +1,16 @@
+local handler = require("cpp-tools.handler")
 local utils = require("cpp-tools.utils")
 
 local M = {}
 
-M.init = function(config, ft)
-    local config_ft = config:get(ft)
-    local config_dir = config:get("dir")
-
-    local handler = require("cpp-tools.handler").new()
-
-    local compiler = config_ft.compiler
-    local compile_opts = config_ft.compile_opts
-    local fallback_flags = config_ft.fallback_flags
-    local compile_cmd = config_ft.compile_cmd
-    local assemble_cmd = config_ft.assemble_cmd
-    local output_dir = config_dir.output_directory
-    local data_dir = config_dir.data_dir_name
+M.init = function(config)
+    local compiler = config.compiler
+    local compile_opts = config.compile_opts
+    local fallback_flags = config.fallback_flags
+    local compile_cmd = config.compile_cmd
+    local assemble_cmd = config.assemble_cmd
+    local output_dir = config.output_directory
+    local data_dir = config.data_dir_name
 
     local options_file = utils.get_options_file(compile_opts)
     local flags = options_file or fallback_flags
@@ -26,10 +22,8 @@ M.init = function(config, ft)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    -- Functions to get the compile and assemble commands
     local function get_compile_command()
-        return compile_cmd or string.format(
-            "%s %s -o %s %s",
+        return compile_cmd or string.format("%s %s -o %s %s",
             compiler,
             flags,
             exe_file,
@@ -38,8 +32,7 @@ M.init = function(config, ft)
     end
 
     local function get_assemble_command()
-        return assemble_cmd or string.format(
-            "%s %s -S -o %s %s",
+        return assemble_cmd or string.format("%s %s -S -o %s %s",
             compiler,
             flags,
             asm_file,
@@ -47,82 +40,56 @@ M.init = function(config, ft)
         )
     end
 
-    -- Core functions that were previously methods of the 'Build' object
-    local function process(key, callback)
-        if vim.bo.modified then
-            vim.cmd("silent! write")
-        end
-        local buffer_hash = utils.get_buffer_hash()
-        if hash[key] ~= buffer_hash then
-            local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
-
-            if vim.tbl_isempty(diagnostics) then
-                callback()
-                hash[key] = buffer_hash
-                return true
-            end
-
-            utils.goto_first_diagnostic(diagnostics)
-            vim.notify("Source code compilation failed.", vim.log.levels.ERROR)
-
-            return false
-        else
-            vim.notify("Source code is already compiled.", vim.log.levels.WARN)
-        end
-
-        return true
-    end
-
     local function compile()
-        if process("compile", function()
-            vim.fn.system(get_compile_command())
-        end) then
+        if handler.process(hash, "compile",
+                function()
+                    vim.fn.system(get_compile_command())
+                end) then
             vim.notify("Compiled successfully.", vim.log.levels.INFO)
         end
     end
 
     local function run()
-        if not process("compile", function()
-            vim.fn.system(get_compile_command())
-        end) then
+        if not handler.process(hash, "compile",
+                function()
+                    vim.fn.system(get_compile_command())
+                end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
         end
-        handler:run(exe_file)
+        handler.run(exe_file, data_file)
     end
 
     local function show_assembly()
-        vim.cmd("silent! write")
-        if not process("assemble", function()
-            vim.fn.system(get_assemble_command())
-        end) then
+        if not handler.process("assemble", function()
+                vim.fn.system(get_assemble_command())
+            end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
         end
-        utils.open(string.format(" %s ", asm_file), utils.read_file(asm_file), "asm")
+        utils.open(asm_file, utils.read_file(asm_file), "asm")
     end
 
     local function add_data_file()
-        if not data_path then return end
-        local files = utils.scan_dir(data_path)
-        if vim.tbl_isempty(files) then
-            vim.notify("No files found in data directory: " .. data_path, vim.log.levels.WARN)
-            return
-        end
-
-        local prompt = 'Current: ' .. (data_file or 'None') .. '):'
-        vim.ui.select(files, {
-            prompt = prompt,
-            format_item = function(item)
-                return vim.fn.fnamemodify(item, ':t')
-            end,
-        }, function(choice)
-            if choice then
-                data_file = choice
-                handler:set_data_file(data_file)
-                vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
+        if data_path then
+            local files = utils.scan_dir(data_path)
+            if vim.tbl_isempty(files) then
+                vim.notify("No files found in data directory: " .. data_path, vim.log.levels.WARN)
+                return
             end
-        end)
+
+            vim.ui.select(files, {
+                prompt = "Current: " .. (data_file or "None"),
+                format_item = function(item)
+                    return vim.fn.fnamemodify(item, ':t')
+                end,
+            }, function(choice)
+                if choice then
+                    data_file = choice
+                    vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
+                end
+            end)
+        end
     end
 
     local function remove_data_file()
@@ -136,7 +103,6 @@ M.init = function(config, ft)
         }, function(choice)
             if choice == "Yes" then
                 data_file = nil
-                handler:set_data_file(nil)
                 vim.notify("Data file removed.", vim.log.levels.INFO)
             end
         end)
@@ -144,7 +110,7 @@ M.init = function(config, ft)
 
     local function get_build_info()
         local lines = {
-            "Filetype         : " .. ft,
+            "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
             "Compile Flags    : " .. flags,
             "Source           : " .. infile,
@@ -155,7 +121,7 @@ M.init = function(config, ft)
             "Date Created     : " .. utils.get_creation_time(infile)
         }
 
-        local buf = utils.open(" Compile Info ", lines, "text")
+        local buf = utils.open("Build Info", lines, "text")
         for i, line in ipairs(lines) do
             local col = line:find(":")
             if col then
@@ -164,7 +130,6 @@ M.init = function(config, ft)
         end
     end
 
-    -- Return all functions that were once part of the 'Build' object
     return {
         compile = compile,
         run = run,

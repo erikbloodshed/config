@@ -1,18 +1,38 @@
-local Handler = {}
-Handler.__index = Handler
+local utils = require("cpp-tools.utils")
 
-function Handler.new()
-    local self = setmetatable({}, Handler)
-    self.data_file = nil
-    return self
+local M = {}
+
+M.process = function(value, key, callback)
+    if vim.bo.modified then
+        vim.cmd("silent! write")
+    end
+    local buffer_hash = utils.get_buffer_hash()
+    if value[key] ~= buffer_hash then
+        local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+
+        if vim.tbl_isempty(diagnostics) then
+            callback()
+            value[key] = buffer_hash
+            return true
+        end
+
+        utils.goto_first_diagnostic(diagnostics)
+        vim.notify("Source code compilation failed.", vim.log.levels.ERROR)
+
+        return false
+    else
+        vim.notify("Source code is already compiled.", vim.log.levels.WARN)
+    end
+
+    return true
 end
 
-function Handler:run(exe)
+M.run = function(exe, data_file)
     vim.cmd.terminal()
     vim.defer_fn(function()
         local command = exe
-        if self.data_file ~= nil then
-            command = exe .. " < " .. self.data_file
+        if data_file ~= nil then
+            command = exe .. " < " .. data_file
         end
         if vim.b.terminal_job_id then
             vim.api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
@@ -22,10 +42,4 @@ function Handler:run(exe)
     end, 100)
 end
 
-function Handler:set_data_file(data)
-    self.data_file = data
-end
-
-return {
-    new = Handler.new,
-}
+return M
