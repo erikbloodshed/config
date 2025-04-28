@@ -12,7 +12,7 @@ M.init = function(config)
 
     local options_file = utils.get_options_file(compile_opts)
     local flags = options_file or fallback_flags
-    local infile = vim.api.nvim_buf_get_name(0)
+    local src_file = vim.api.nvim_buf_get_name(0)
     local exe_file = output_dir .. vim.fn.expand("%:t:r")
     local asm_file = exe_file .. ".s"
     local data_path = utils.get_data_path(data_dir)
@@ -20,29 +20,23 @@ M.init = function(config)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    local compile_command = table.concat({ compiler, flags, "-o", exe_file, infile }, " ")
-    local assemble_command = table.concat({ compiler, flags, "-S -o", asm_file, infile }, " ")
+    local compile_command = table.concat({ compiler, flags, "-o", exe_file, src_file }, " ")
+    local assemble_command = table.concat({ compiler, flags, "-S -o", asm_file, src_file }, " ")
 
     local function compile()
-        if handler.compile(hash, "compile", compile_command) then
-            vim.notify("Compiled successfully.", vim.log.levels.INFO)
-        end
+        return handler.compile(hash, "compile", compile_command)
     end
 
     local function run()
-        if not handler.compile(hash, "compile", compile_command) then
-            vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
-            return
+        if compile() then
+            handler.run(exe_file, data_file)
         end
-        handler.run(exe_file, data_file)
     end
 
     local function show_assembly()
-        if not handler.compile(hash, "assemble", assemble_command) then
-            vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
-            return
+        if handler.compile(hash, "assemble", assemble_command) then
+            utils.open(asm_file, utils.read_file(asm_file), "asm")
         end
-        utils.open(asm_file, utils.read_file(asm_file), "asm")
     end
 
     local function add_data_file()
@@ -68,19 +62,17 @@ M.init = function(config)
     end
 
     local function remove_data_file()
-        if data_file == nil then
-            vim.notify("No data file is currently set.", vim.log.levels.WARN)
-            return
+        if data_file then
+            vim.ui.select({ "Yes", "No" }, {
+                prompt = "Remove data file (" .. vim.fn.fnamemodify(data_file, ':t') .. ")?",
+            }, function(choice)
+                if choice == "Yes" then
+                    data_file = nil
+                    vim.notify("Data file removed.", vim.log.levels.INFO)
+                end
+            end)
         end
-
-        vim.ui.select({ "Yes", "No" }, {
-            prompt = "Remove data file (" .. vim.fn.fnamemodify(data_file, ':t') .. ")?",
-        }, function(choice)
-            if choice == "Yes" then
-                data_file = nil
-                vim.notify("Data file removed.", vim.log.levels.INFO)
-            end
-        end)
+        vim.notify("No data file is currently set.", vim.log.levels.WARN)
     end
 
     local function get_build_info()
@@ -88,12 +80,11 @@ M.init = function(config)
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
             "Compile Flags    : " .. flags,
-            "Source           : " .. infile,
+            "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or ""),
             "Data File In Use : " .. (data_file or ""),
-            "Date Modified    : " .. utils.get_modified_time(infile),
-            "Date Created     : " .. utils.get_creation_time(infile)
+            "Date Modified    : " .. utils.get_modified_time(src_file),
         }
 
         local buf = utils.open("Build Info", lines, "text")

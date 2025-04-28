@@ -6,13 +6,16 @@ M.compile = function(value, key, cmd)
     if vim.bo.modified then
         vim.cmd("silent! write")
     end
+
     local buffer_hash = utils.get_buffer_hash()
+
     if value[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
         if vim.tbl_isempty(diagnostics) then
             vim.fn.system(cmd)
             value[key] = buffer_hash
+            vim.notify("Source code compilation successful.", vim.log.levels.INFO)
             return true
         end
 
@@ -20,10 +23,9 @@ M.compile = function(value, key, cmd)
         vim.notify("Source code compilation failed.", vim.log.levels.ERROR)
 
         return false
-    else
-        vim.notify("Source code is already compiled.", vim.log.levels.WARN)
     end
 
+    vim.notify("Source code is already compiled.", vim.log.levels.WARN)
     return true
 end
 

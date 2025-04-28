@@ -2,15 +2,20 @@ local M = {}
 
 M.scan_dir = function(dir)
     local handle = io.popen('find "' .. dir .. '" -type f 2>/dev/null')
+
     if not handle then
         vim.notify("Failed to scan directory: " .. dir, vim.log.levels.ERROR)
         return {}
     end
+
     local result = {}
+
     for file in handle:lines() do
         table.insert(result, file)
     end
+
     local ok, err = handle:close() -- Capture return values from handle:close()
+
     if not ok then
         vim.notify("Error closing file handle: " .. err, vim.log.levels.ERROR)
     end
@@ -119,24 +124,11 @@ M.open = function(title, lines, ft)
 end
 
 function M.get_modified_time(filepath)
-    local file_stats = vim.fn.getftime(filepath) -- `getftime` retrieves the file modification time
-    if file_stats > 0 then
-        return os.date("%Y-%B-%d %H:%M:%S", file_stats)
+    local file_stats = vim.uv.fs_stat(filepath)
+    if file_stats then
+        return os.date("%Y-%B-%d %H:%M:%S", file_stats.mtime.sec)
     else
         return "Unable to retrieve file modified time."
-    end
-end
-
-function M.get_creation_time(file)
-    local handle = io.popen("stat -c %W " .. file)  -- %W gives the creation (birth) time
-    if not handle then return "Could not open " .. file end
-    local result = handle:read("*a")
-    handle:close()
-    local creation_time = tonumber(result)
-    if creation_time then
-        return os.date("%Y-%B-%d %H:%M:%S", creation_time)
-    else
-        return "Unable to retrieve file creation time."
     end
 end
 
