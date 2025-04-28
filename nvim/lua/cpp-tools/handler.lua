@@ -2,7 +2,7 @@ local utils = require("cpp-tools.utils")
 
 local M = {}
 
-M.process = function(value, key, callback)
+M.compile = function(value, key, callback)
     if vim.bo.modified then
         vim.cmd("silent! write")
     end

@@ -7,8 +7,6 @@ M.init = function(config)
     local compiler = config.compiler
     local compile_opts = config.compile_opts
     local fallback_flags = config.fallback_flags
-    local compile_cmd = config.compile_cmd
-    local assemble_cmd = config.assemble_cmd
     local output_dir = config.output_directory
     local data_dir = config.data_dir_name
 
@@ -22,37 +20,22 @@ M.init = function(config)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    local function get_compile_command()
-        return compile_cmd or string.format("%s %s -o %s %s",
-            compiler,
-            flags,
-            exe_file,
-            infile
-        )
-    end
-
-    local function get_assemble_command()
-        return assemble_cmd or string.format("%s %s -S -o %s %s",
-            compiler,
-            flags,
-            asm_file,
-            infile
-        )
-    end
+    local compile_command = table.concat({ compiler, flags, "-o", exe_file, infile }, " ")
+    local assemble_command = table.concat({ compiler, flags, "-S -o", asm_file, infile }, " ")
 
     local function compile()
-        if handler.process(hash, "compile",
+        if handler.compile(hash, "compile",
                 function()
-                    vim.fn.system(get_compile_command())
+                    vim.fn.system(compile_command)
                 end) then
             vim.notify("Compiled successfully.", vim.log.levels.INFO)
         end
     end
 
     local function run()
-        if not handler.process(hash, "compile",
+        if not handler.compile(hash, "compile",
                 function()
-                    vim.fn.system(get_compile_command())
+                    vim.fn.system(compile_command)
                 end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
@@ -61,8 +44,8 @@ M.init = function(config)
     end
 
     local function show_assembly()
-        if not handler.process("assemble", function()
-                vim.fn.system(get_assemble_command())
+        if not handler.compile("assemble", function()
+                vim.fn.system(assemble_command)
             end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
             return
