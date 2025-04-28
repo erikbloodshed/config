@@ -1,17 +1,13 @@
 local utils = require("cpp-tools.utils")
 
-local Build = {}
-Build.__index = Build
+local M = {}
 
-function Build.new(config, ft)
-    local self = setmetatable({}, Build)
-
+M.init = function(config, ft)
     local config_ft = config:get(ft)
     local config_dir = config:get("dir")
 
     local handler = require("cpp-tools.handler").new()
 
-    -- Capture all the static stuff into locals
     local compiler = config_ft.compiler
     local compile_opts = config_ft.compile_opts
     local fallback_flags = config_ft.fallback_flags
@@ -30,7 +26,7 @@ function Build.new(config, ft)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    -- These are closures now
+    -- Functions to get the compile and assemble commands
     local function get_compile_command()
         return compile_cmd or string.format(
             "%s %s -o %s %s",
@@ -51,8 +47,8 @@ function Build.new(config, ft)
         )
     end
 
-    -- Core methods
-    function self:process(key, callback)
+    -- Core functions that were previously methods of the 'Build' object
+    local function process(key, callback)
         if vim.bo.modified then
             vim.cmd("silent! write")
         end
@@ -77,16 +73,16 @@ function Build.new(config, ft)
         return true
     end
 
-    function self:compile()
-        if self:process("compile", function()
+    local function compile()
+        if process("compile", function()
             vim.fn.system(get_compile_command())
         end) then
             vim.notify("Compiled successfully.", vim.log.levels.INFO)
         end
     end
 
-    function self:run()
-        if not self:process("compile", function()
+    local function run()
+        if not process("compile", function()
             vim.fn.system(get_compile_command())
         end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
@@ -95,9 +91,9 @@ function Build.new(config, ft)
         handler:run(exe_file)
     end
 
-    function self:show_assembly()
+    local function show_assembly()
         vim.cmd("silent! write")
-        if not self:process("assemble", function()
+        if not process("assemble", function()
             vim.fn.system(get_assemble_command())
         end) then
             vim.notify("Compilation failed or skipped, cannot run.", vim.log.levels.WARN)
@@ -106,7 +102,7 @@ function Build.new(config, ft)
         utils.open(string.format(" %s ", asm_file), utils.read_file(asm_file), "asm")
     end
 
-    function self:add_data_file()
+    local function add_data_file()
         if not data_path then return end
         local files = utils.scan_dir(data_path)
         if vim.tbl_isempty(files) then
@@ -129,7 +125,7 @@ function Build.new(config, ft)
         end)
     end
 
-    function self:remove_data_file()
+    local function remove_data_file()
         if data_file == nil then
             vim.notify("No data file is currently set.", vim.log.levels.WARN)
             return
@@ -146,7 +142,7 @@ function Build.new(config, ft)
         end)
     end
 
-    function self:get_build_info()
+    local function get_build_info()
         local lines = {
             "Filetype         : " .. ft,
             "Compiler         : " .. compiler,
@@ -168,10 +164,15 @@ function Build.new(config, ft)
         end
     end
 
-    return self
+    -- Return all functions that were once part of the 'Build' object
+    return {
+        compile = compile,
+        run = run,
+        show_assembly = show_assembly,
+        add_data_file = add_data_file,
+        remove_data_file = remove_data_file,
+        get_build_info = get_build_info
+    }
 end
 
-return {
-    new = Build.new,
-}
-
+return M

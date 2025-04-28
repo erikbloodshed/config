@@ -9,7 +9,7 @@ function M.setup(opts)
 
             local ft = vim.bo.filetype
             local config = require("cpp-tools.config").new(opts)
-            local build = require("cpp-tools.build").new(config, ft)
+            local build = require("cpp-tools.build").init(config, ft)
             local arg = { buffer = args.buf, noremap = true }
 
             vim.keymap.set("n", "<leader>rc", function() build:compile() end, arg)
