@@ -20,8 +20,8 @@ M.init = function(config)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    local compile_command = table.concat({ compiler, flags, "-o", exe_file, src_file }, " ")
-    local assemble_command = table.concat({ compiler, flags, "-S -o", asm_file, src_file }, " ")
+    local compile_command = { compiler, flags, "-o", exe_file, src_file }
+    local assemble_command = { compiler, flags, "-S -o", asm_file, src_file }
 
     local function compile()
         return handler.compile(hash, "compile", compile_command)
