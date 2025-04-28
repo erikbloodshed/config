@@ -89,10 +89,8 @@ M.open = function(title, lines, ft)
     local width = math.min(max_line_length + 4, math.floor(vim.o.columns * 0.8))
     local height = math.min(#lines, math.floor(vim.o.lines * 0.8))
 
-    -- Create buffer first
     local buf = vim.api.nvim_create_buf(false, true)
 
-    -- Set buffer options early (before setting lines)
     vim.bo[buf].buftype = "nofile"
     vim.bo[buf].bufhidden = "wipe"
     vim.bo[buf].swapfile = false

@@ -4,32 +4,33 @@ local Build = {}
 Build.__index = Build
 
 function Build.new(config, ft)
-    local self             = setmetatable({}, Build)
+    local self          = setmetatable({}, Build)
 
-    local config_ft        = config:get(ft)
-    local config_dir       = config:get("dir")
+    local config_ft     = config:get(ft)
+    local config_dir    = config:get("dir")
 
-    self.handler = require("cpp-tools.handler").new()
+    self.handler        = require("cpp-tools.handler").new()
 
-    self.compiler          = config_ft.compiler
-    self.compile_opts      = config_ft.compile_opts
-    self.fallback_flags    = config_ft.fallback_flags
-    self.compile_cmd       = config_ft.compile_cmd
-    self.assemble_cmd      = config_ft.assemble_cmd
-    self.output_dir        = config_dir.output_directory
-    self.data_dir          = config_dir.data_dir_name
+    self.compiler       = config_ft.compiler
+    self.compile_opts   = config_ft.compile_opts
+    self.fallback_flags = config_ft.fallback_flags
+    self.compile_cmd    = config_ft.compile_cmd
+    self.assemble_cmd   = config_ft.assemble_cmd
+    self.output_dir     = config_dir.output_directory
+    self.data_dir       = config_dir.data_dir_name
 
-    self.options_file      = utils.get_options_file(self.compile_opts)
-    self.flags             = self.options_file or self.fallback_flags
-    self.exe_file          = self.output_dir .. vim.fn.expand("%:t:r")
-    self.asm_file          = self.exe_file .. ".s"
-    self.infile            = vim.api.nvim_buf_get_name(0)
-    self.data_path         = utils.get_data_path(self.data_dir)
-    self.hash              = { compile = nil, assemble = nil }
+    self.options_file   = utils.get_options_file(self.compile_opts)
+    self.flags          = self.options_file or self.fallback_flags
+    self.exe_file       = self.output_dir .. vim.fn.expand("%:t:r")
+    self.asm_file       = self.exe_file .. ".s"
+    self.infile         = vim.api.nvim_buf_get_name(0)
+    self.data_path      = utils.get_data_path(self.data_dir)
+    self.data_file      = nil
+    self.hash           = { compile = nil, assemble = nil }
 
-    self.ft                = ft
-    self.cmp_command       = self:get_compile_command()
-    self.asm_command       = self:get_assemble_command()
+    self.ft             = ft
+    self.cmp_command    = self:get_compile_command()
+    self.asm_command    = self:get_assemble_command()
     return self
 end
 
@@ -84,11 +85,43 @@ function Build:show_assembly()
 end
 
 function Build:add_data_file()
-    self.handler:select_data_file(self.data_path) -- Call method on instance
+    if not self.data_path then return end
+    local files = utils.scan_dir(self.data_path)
+    if vim.tbl_isempty(files) then
+        vim.notify("No files found in data directory: " .. self.data_path, vim.log.levels.WARN)
+        return
+    end
+
+    local prompt = 'Current: ' .. (self.data_file or 'None') .. '):'
+    vim.ui.select(files, {
+        prompt = prompt,
+        format_item = function(item)
+            return vim.fn.fnamemodify(item, ':t')
+        end,
+    }, function(choice)
+        if choice then
+            self.data_file = choice
+            self.handler:set_data_file(self.data_file)
+            vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
+        end
+    end)
 end
 
 function Build:remove_data_file()
-    self.handler:remove_data_file() -- Call method on instance
+    if self.data_file == nil then
+        vim.notify("No data file is currently set.", vim.log.levels.WARN)
+        return
+    end
+
+    vim.ui.select({ "Yes", "No" }, {
+        prompt = "Remove data file (" .. vim.fn.fnamemodify(self.data_file, ':t') .. ")?",
+    }, function(choice)
+        if choice == "Yes" then
+            self.data_file = nil
+            self.handler:set_data_file(self.data_file)
+            vim.notify("Data file removed.", vim.log.levels.INFO)
+        end
+    end)
 end
 
 function Build:get_build_info()
@@ -99,6 +132,7 @@ function Build:get_build_info()
         "Source           : " .. self.infile,
         "Output Directory : " .. self.output_dir,
         "Data Directory   : " .. (self.data_path or ""),
+        "Data File In Use : " .. (self.data_file or ""),
         "Date Modified    : " .. utils.get_modified_time(self.infile),
         "Date Created     : " .. utils.get_creation_time(self.infile)
     }
