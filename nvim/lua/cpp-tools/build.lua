@@ -79,7 +79,7 @@ M.init = function(config)
         local lines = {
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
-            "Compile Flags    : " .. flags,
+            "Compile Flags    : " .. table.concat(flags, " "),
             "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or ""),
@@ -87,11 +87,11 @@ M.init = function(config)
             "Date Modified    : " .. utils.get_modified_time(src_file),
         }
 
-        local buf = utils.open("Build Info", lines, "text")
+        local buf_id = utils.open("Build Info", lines, "text")
         for i, line in ipairs(lines) do
             local col = line:find(":")
             if col then
-                vim.api.nvim_buf_add_highlight(buf, -1, "Keyword", i - 1, 0, col - 1)
+                vim.api.nvim_buf_add_highlight(buf_id, -1, "Keyword", i - 1, 0, col - 1)
             end
         end
     end
