@@ -40,7 +40,7 @@ local function safe_close_handle(handle, callback)
     end
 end
 
-function M.compiler(cmd_and_args)
+function M.execute(cmd_and_args)
     local uv = vim.uv -- Get the libuv event loop handle from Neovim
 
     -- Validate input: must be a non-empty table
@@ -258,6 +258,7 @@ function M.compiler(cmd_and_args)
     -- Return the results
     return {
         code = exit_code,
+        signal = exit_signal,
         stdout = final_stdout,
         stderr = final_stderr,
         error = internal_error -- Reports errors from this function itself (e.g., spawn/read errors)

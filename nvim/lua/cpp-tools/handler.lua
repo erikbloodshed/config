@@ -1,8 +1,5 @@
 local utils = require("cpp-tools.utils")
--- local cpp_core = require("cpp-tools.cpp_core")
--- local compiler = require("cpp-tools.test_compiler")
--- local compiler = require("cpp-tools.test_compiler2")
-local compiler = require("cpp-tools.test_compiler3")
+local compiler = require("cpp-tools.compiler")
 
 local M = {}
 
@@ -16,14 +13,9 @@ M.compile = function(value, key, cmd)
     if value[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
-        -- local obj = cpp_core.system_sync(cmd)
-        local obj = compiler.compiler(vim.split(cmd, " "))
+        local obj = compiler.execute(vim.split(cmd, " "))
 
-        if not obj or obj.code == 0 then
-            if not obj then
-                print("It sucks!!!")
-                return
-            end
+        if obj.code == 0 then
             value[key] = buffer_hash
             vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",
                 vim.log.levels.INFO)
