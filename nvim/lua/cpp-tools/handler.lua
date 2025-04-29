@@ -12,7 +12,7 @@ M.compile = function(value, key, cmd)
     if value[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
-        local obj = vim.system(vim.iter(cmd):flatten():totable(), { text = true }):wait()
+        local obj = vim.system(vim.split(cmd, " "), { text = true }):wait()
         if obj.code == 0 then
             value[key] = buffer_hash
             vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",

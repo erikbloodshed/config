@@ -20,8 +20,8 @@ M.init = function(config)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    local compile_command = { compiler, flags, "-o", exe_file, src_file }
-    local assemble_command = { compiler, flags, "-S -o", asm_file, src_file }
+    local compile_command = string.format("%s %s -o %s %s", compiler, flags, exe_file, src_file)
+    local assemble_command = string.format("%s %s -S -o %s %s", compiler, flags, asm_file, src_file)
 
     local function compile()
         return handler.compile(hash, "compile", compile_command)
@@ -79,7 +79,7 @@ M.init = function(config)
         local lines = {
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
-            "Compile Flags    : " .. table.concat(flags, " "),
+            "Compile Flags    : " .. flags,
             "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or ""),
