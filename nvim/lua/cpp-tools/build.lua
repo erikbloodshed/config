@@ -5,13 +5,10 @@ local M = {}
 
 M.init = function(config)
     local compiler = config.compiler
-    local compile_opts = config.compile_opts
-    local fallback_flags = config.fallback_flags
+    local flags = config.compile_opts
     local output_dir = config.output_directory
     local data_dir = config.data_dir_name
 
-    local options_file = utils.get_options_file(compile_opts)
-    local flags = options_file or fallback_flags
     local src_file = vim.api.nvim_buf_get_name(0)
     local exe_file = output_dir .. vim.fn.expand("%:t:r")
     local asm_file = exe_file .. ".s"
