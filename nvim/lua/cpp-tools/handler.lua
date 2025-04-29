@@ -3,7 +3,7 @@ local process = require("cpp-tools.process")
 
 local M = {}
 
-M.compile = function(value, key, cmd)
+M.translate = function(value, key, cmd)
     if vim.bo.modified then
         vim.cmd("silent! write")
     end

@@ -75,7 +75,13 @@ M.get_options_file = function(filename)
     return nil
 end
 
+local data_path_cache = {}
+
 M.get_data_path = function(filename)
+    if data_path_cache[filename] then
+        return data_path_cache[filename]
+    end
+
     if filename then
         local path = vim.fs.find(filename, {
             upward = true,
@@ -84,6 +90,7 @@ M.get_data_path = function(filename)
             stop = vim.fn.expand("~"),
         })[1]
 
+        data_path_cache[filename] = path
         return path
     end
 
