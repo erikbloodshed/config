@@ -1,4 +1,5 @@
 local utils = require("cpp-tools.utils")
+local gemini = require("cpp-tools.gemini")
 
 local M = {}
 
@@ -12,15 +13,19 @@ M.compile = function(value, key, cmd)
     if value[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
-        local obj = vim.system(vim.split(cmd, " "), { text = true }):wait()
+        -- local obj = vim.system(cmd, { text = true, stdout = false }):wait()
+        local obj = gemini.system_sync(cmd)
+
         if obj.code == 0 then
             value[key] = buffer_hash
             vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",
                 vim.log.levels.INFO)
             return true
+        else
+            vim.notify("Source code compilation failed with error code " .. obj.code .. ".", vim.log.levels.ERROR)
+            return false
         end
 
-        vim.notify("Source code compilation failed with error code " .. obj.code .. ".", vim.log.levels.ERROR)
         utils.goto_first_diagnostic(diagnostics)
         return false
     end

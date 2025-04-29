@@ -55,6 +55,8 @@ M.init = function(config)
                     vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
                 end
             end)
+        else
+            vim.notify("'" .. data_dir .. "' directory not found.", vim.log.levels.ERROR)
         end
     end
 

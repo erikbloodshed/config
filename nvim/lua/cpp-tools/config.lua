@@ -25,9 +25,10 @@ M.init = function(options)
     local ft = vim.bo.filetype
     local compile_opts = config[ft].compile_opts
     local fallback = config[ft].fallback_flags
+
     config[ft].compile_opts = compile_opts and utils.get_options_file(compile_opts) or fallback
 
-    return config[vim.bo.filetype]
+    return config[ft]
 end
 
 return M

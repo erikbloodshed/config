@@ -1,152 +1,73 @@
+--[[
+vim.system_sync(cmd, options)
+
+Provides a synchronous interface similar to vim.system() but built
+on the asynchronous vim.loop.spawn (libuv).
+
+Runs an external command, waits for it to finish, captures its output,
+and returns the results.
+
+Parameters:
+  cmd: string | table
+    - If string: The command and arguments as a single string.
+                 WARNING: Simple space-splitting is used, which may fail
+                 for arguments containing spaces or requiring complex quoting.
+                 Using a table is generally safer. Example: "ls -l /tmp"
+    - If table: A list where the first element is the command/executable
+                and subsequent elements are its arguments.
+                Example: {'ls', '-l', '/tmp'}
+  options: table (optional) - A table containing zero or more of the following:
+    - input: string - Text to be written to the command's standard input.
+    - cwd: string - The working directory to run the command in. Defaults to
+                     the current directory if nil.
+    - env: table - Environment variables for the child process as a table
+                   of key-value pairs (e.g., {VAR1 = "value1", VAR2 = "value2"}).
+                   If provided, this *replaces* the parent's environment entirely
+                   for the child. To inherit and modify, first get
+                   vim.loop.os_environ(), modify it, then pass the result here.
+                   If nil, the child inherits the parent's environment.
+    - timeout: integer (milliseconds) - Maximum time to allow the command to run.
+                 If the command exceeds this time, it will be terminated (SIGTERM),
+                 and an error will be included in the result. Defaults to no timeout.
+    - verbatim_args: boolean - (Windows only) If true, pass arguments directly
+                       without quoting or escaping. Ignored on non-Windows.
+                       Corresponds to uv.spawn options.verbatim.
+    - detached: boolean - If true, run the process detached (becomes group leader).
+                       See uv.spawn options.detached. Defaults to false.
+    - hide_window: boolean - (Windows only) If true, hide the console window.
+                       Corresponds to uv.spawn options.hide. Ignored on non-Windows.
+
+Returns:
+  table: A table containing the results:
+    - code: integer | nil - The exit code of the command. Nil if terminated by signal or timeout.
+    - signal: integer - The signal number that terminated the process (usually 0
+                       if the process exited normally). May be non-zero if killed
+                       by a signal (e.g., due to timeout).
+    - stdout: string - The captured standard output. Lines are typically terminated
+                       by '\n'.
+    - stderr: string - The captured standard error. Lines are typically terminated
+                       by '\n'.
+    - error: string | nil - An error message if the function itself failed (e.g.,
+                       timeout, spawn error, I/O error). Nil on success.
+
+Example Usage:
+  local result = vim.system_sync({'echo', 'hello world'})
+  print(vim.inspect(result))
+  -- Expected: { code = 0, signal = 0, stdout = "hello world\n", stderr = "", error = nil }
+
+  local result_input = vim.system_sync({'cat'}, { input = "some data" })
+  print(vim.inspect(result_input))
+  -- Expected: { code = 0, signal = 0, stdout = "some data", stderr = "", error = nil }
+
+  local result_err = vim.system_sync({'sh', '-c', 'echo "to stderr" >&2 && exit 1'})
+  print(vim.inspect(result_err))
+  -- Expected: { code = 1, signal = 0, stdout = "", stderr = "to stderr\n", error = nil }
+
+  local result_timeout = vim.system_sync({'sleep', '5'}, { timeout = 1000 })
+  print(vim.inspect(result_timeout))
+  -- Expected: { code = nil, signal = 15, stdout = "", stderr = "", error = "Command timed out" } -- Signal might vary
+]]
 local M = {}
-
-M.scan_dir = function(dir)
-    local result = {}
-
-    -- Check if the initial directory exists and is a directory
-    local stat = vim.uv.fs_stat(dir)
-    if not stat or stat.type ~= "directory" then
-        vim.notify("Data directory not found or is not a directory: " .. dir, vim.log.levels.WARN)
-        return {} -- Return empty table if dir doesn't exist or isn't a directory
-    end
-
-    -- Use vim.fs.dir to get an iterator for the directory contents
-    -- The second argument '{}' can be used for options (like filtering), but we'll filter manually.
-    -- The third argument '{ depth = math.huge }' enables recursive scanning.
-    local iter, err = vim.fs.dir(dir, {}, { depth = math.huge })
-
-    if not iter then
-        vim.notify("Failed to scan directory: " .. dir .. (err and (" (" .. err .. ")") or ""), vim.log.levels.ERROR)
-        return {} -- Return empty table on error
-    end
-
-    -- Iterate through the directory entries provided by vim.fs.dir
-    for path, entry_type in iter do
-        -- Check if the entry is a file
-        if entry_type == "file" then
-            -- Construct the full path by joining the base directory and the relative path
-            local full_path = vim.fs.joinpath(dir, path)
-            table.insert(result, full_path)
-        end
-    end
-
-    -- Sort the results alphabetically (case-insensitive)
-    table.sort(result, function(a, b)
-        return string.lower(a) < string.lower(b)
-    end)
-
-    return result
-end
-
-M.get_buffer_hash = function()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
-    local content = table.concat(lines, "\n")
-    return vim.fn.sha256(content)
-end
-
-M.goto_first_diagnostic = function(diagnostics)
-    if vim.tbl_isempty(diagnostics) then
-        return
-    end
-    local diag = diagnostics[1]
-    local col = diag.col
-    local lnum = diag.lnum
-    local buf_lines = vim.api.nvim_buf_line_count(0)
-    lnum = math.min(lnum, buf_lines - 1)
-    local line = vim.api.nvim_buf_get_lines(0, lnum, lnum + 1, false)[1] or ""
-    col = math.min(col, #line)
-    vim.api.nvim_win_set_cursor(0, { lnum + 1, col + 1 })
-end
-
-M.get_options_file = function(filename)
-    if filename then
-        local path = vim.fs.find(filename, {
-            upward = true,
-            type = "file",
-            path = vim.fn.expand("%:p:h"),
-            stop = vim.fn.expand("~"),
-        })[1]
-
-        if path then
-            return "@" .. path
-        end
-    end
-
-    return nil
-end
-
-M.get_data_path = function(filename)
-    if filename then
-        local path = vim.fs.find(filename, {
-            upward = true,
-            type = "directory",
-            path = vim.fn.expand("%:p:h"),
-            stop = vim.fn.expand("~"),
-        })[1]
-
-        return path
-    end
-
-    return nil
-end
-
-M.read_file = function(filepath)
-    local f = io.open(filepath, "r")
-
-    if not f then return nil, "Could not open file: " .. filepath end
-    local content = {}
-    for line in f:lines() do table.insert(content, line) end
-    f:close()
-
-    return content
-end
-
-M.open = function(title, lines, ft)
-    local max_line_length = 0
-    for _, line in ipairs(lines) do
-        max_line_length = math.max(max_line_length, #line)
-    end
-    local width = math.min(max_line_length + 4, math.floor(vim.o.columns * 0.8))
-    local height = math.min(#lines, math.floor(vim.o.lines * 0.8))
-
-    local buf = vim.api.nvim_create_buf(false, true)
-
-    vim.bo[buf].buftype = "nofile"
-    vim.bo[buf].bufhidden = "wipe"
-    vim.bo[buf].swapfile = false
-    vim.bo[buf].filetype = ft
-
-    -- Fill buffer content
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-
-    -- Open floating window
-    vim.api.nvim_open_win(buf, true, {
-        relative = "editor",
-        width = width,
-        height = height,
-        row = (vim.o.lines - height) / 2,
-        col = (vim.o.columns - width) / 2,
-        style = "minimal",
-        border = "rounded",
-        title = title,
-        title_pos = "center",
-    })
-
-    vim.bo[buf].modifiable = false
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf, noremap = true, nowait = true, silent = true })
-
-    return buf
-end
-
-function M.get_modified_time(filepath)
-    local file_stats = vim.uv.fs_stat(filepath)
-    if file_stats then
-        return os.date("%Y-%B-%d %H:%M:%S", file_stats.mtime.sec)
-    else
-        return "Unable to retrieve file modified time."
-    end
-end
-
 function M.system_sync(cmd, options)
     local uv = vim.loop -- Get the libuv event loop handle from Neovim
 
@@ -471,3 +392,28 @@ function M.system_sync(cmd, options)
 end
 
 return M
+
+-- Remove or comment out the example usage lines before using in production code
+-- print("--- Example: echo hello world ---")
+-- local result1 = vim.system_sync({'echo', 'hello world'})
+-- print(vim.inspect(result1))
+
+-- print("\n--- Example: cat with input ---")
+-- local result2 = vim.system_sync({'cat'}, { input = "Line 1\nLine 2" })
+-- print(vim.inspect(result2))
+
+-- print("\n--- Example: command producing stderr and non-zero exit ---")
+-- local result3 = vim.system_sync({'sh', '-c', 'echo "stdout msg" && echo "stderr msg" >&2 && exit 42'})
+-- print(vim.inspect(result3))
+
+-- print("\n--- Example: timeout ---")
+-- local result4 = vim.system_sync({'sleep', '3'}, { timeout = 1500 }) -- 1.5 second timeout
+-- print(vim.inspect(result4))
+
+-- print("\n--- Example: invalid command ---")
+-- local result5 = vim.system_sync({'hopefully_this_command_does_not_exist'})
+-- print(vim.inspect(result5)) -- Expect spawn error
+
+-- print("\n--- Example: string command ---")
+-- local result6 = vim.system_sync('ls -l *.lua') -- Adjust pattern as needed
+-- print(vim.inspect(result6))
