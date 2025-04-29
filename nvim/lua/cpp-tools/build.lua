@@ -17,8 +17,8 @@ M.init = function(config)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
 
-    local compile_command = string.format("%s %s -o %s %s", compiler, flags, exe_file, src_file)
-    local assemble_command = string.format("%s %s -S -o %s %s", compiler, flags, asm_file, src_file)
+    local compile_command = utils.flatten_tbl({ compiler, flags, "-o", exe_file, src_file })
+    local assemble_command = utils.flatten_tbl({ compiler, flags, "-S", "-o", asm_file, src_file })
 
     local function compile()
         return handler.compile(hash, "compile", compile_command)
@@ -75,10 +75,18 @@ M.init = function(config)
     end
 
     local function get_build_info()
+        local str = function(v)
+            if type(v) == "string" then
+                return v
+            else
+                return table.concat(v, " ")
+            end
+        end
+
         local lines = {
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
-            "Compile Flags    : " .. flags,
+            "Compile Flags    : " .. str(flags),
             "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or ""),
@@ -86,11 +94,14 @@ M.init = function(config)
             "Date Modified    : " .. utils.get_modified_time(src_file),
         }
 
+        local ns_id = vim.api.nvim_create_namespace("build_info_highlight")
         local buf_id = utils.open("Build Info", lines, "text")
-        for i, line in ipairs(lines) do
-            local col = line:find(":")
-            if col then
-                vim.api.nvim_buf_add_highlight(buf_id, -1, "Keyword", i - 1, 0, col - 1)
+
+        for idx = 1, #lines do
+            local line = lines[idx]
+            local colon_pos = line:find(":")
+            if colon_pos and colon_pos > 1 then
+                vim.api.nvim_buf_add_highlight(buf_id, ns_id, "Keyword", idx - 1, 0, colon_pos - 1)
             end
         end
     end

@@ -23,7 +23,7 @@ Returns:
 ]]
 local M = {}
 
---- Helper function to safely close a libuv handle.
+-- Helper function to safely close a libuv handle.
 -- Checks if the handle exists, is active, and not already closing before attempting to close.
 -- Calls an optional callback after closure.
 -- @param handle The libuv handle to close.
@@ -68,7 +68,6 @@ function M.execute(cmd_and_args)
     local stderr_chunks = {}
     local exit_code = nil      -- Will hold the numeric exit code or nil if terminated by signal
     local internal_error = nil -- For errors within this function (spawn, pipe, read errors)
-    local exit_signal = nil    -- Will hold the signal number if terminated by signal
 
     -- Flags to track completion of asynchronous operations
     local process_exited = false
@@ -93,9 +92,8 @@ function M.execute(cmd_and_args)
     end
 
     -- Callback function executed when the spawned process exits
-    local on_exit = function(code, signal)
+    local on_exit = function(code)
         exit_code = code     -- Capture the process exit code (0 for success, non-zero for error)
-        exit_signal = signal -- Capture the signal number if terminated by signal
 
         process_exited = true
 
@@ -258,7 +256,6 @@ function M.execute(cmd_and_args)
     -- Return the results
     return {
         code = exit_code,
-        signal = exit_signal,
         stdout = final_stdout,
         stderr = final_stderr,
         error = internal_error -- Reports errors from this function itself (e.g., spawn/read errors)

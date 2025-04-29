@@ -1,5 +1,5 @@
 local utils = require("cpp-tools.utils")
-local compiler = require("cpp-tools.compiler")
+local process = require("cpp-tools.process")
 
 local M = {}
 
@@ -13,7 +13,8 @@ M.compile = function(value, key, cmd)
     if value[key] ~= buffer_hash then
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
-        local obj = compiler.execute(vim.split(cmd, " "))
+        local obj = process.execute(cmd)
+        -- local obj = vim.system(cmd):wait()
 
         if obj.code == 0 then
             value[key] = buffer_hash
@@ -21,7 +22,7 @@ M.compile = function(value, key, cmd)
                 vim.log.levels.INFO)
             return true
         else
-            vim.notify("Source code compilation failed with error code " .. obj.code .. ".", vim.log.levels.ERROR)
+            vim.notify("Source code compilation failed with error " .. obj.stderr .. ".", vim.log.levels.ERROR)
             return false
         end
 
