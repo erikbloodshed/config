@@ -31,33 +31,33 @@ M.init = function(config)
     -- NOTE: Persisting hashes to disk (e.g. per-project) could optimize larger workflows.
     local hash = { compile = nil, assemble = nil }
 
-
     local data_file = nil
 
     local compile_command = utils.flatten_tbl({ compiler, flags, "-o", exe_file, src_file })
     local assemble_command = utils.flatten_tbl({ compiler, flags, "-S", "-o", asm_file, src_file })
 
+    -- TODO: Log failure details or errors on compile failure.
     local function compile()
-        -- TODO: Log failure details or errors on compile failure.
         return handler.translate(hash, "compile", compile_command)
     end
 
+    -- TODO: Support passing runtime arguments or environment variables.
     local function run()
         if compile() then
             handler.run(exe_file, data_file)
         end
     end
 
-    -- TODO: Support passing runtime arguments or environment variables.
 
+    -- TODO: Skip assembly generation if existing file is already up-to-date.
     local function show_assembly()
         if handler.translate(hash, "assemble", assemble_command) then
             utils.open(asm_file, utils.read_file(asm_file), "asm")
         end
     end
 
-    -- TODO: Skip assembly generation if existing file is already up-to-date.
-
+    -- TODO: Allow previewing a data file’s contents before selection.
+    -- TODO: Optionally remember last-used data file per buffer/project.
     local function add_data_file()
         if data_path then
             local files = utils.scan_dir(data_path)
@@ -82,9 +82,7 @@ M.init = function(config)
         end
     end
 
-    -- TODO: Allow previewing a data file’s contents before selection.
-    -- TODO: Optionally remember last-used data file per buffer/project.
-
+    -- TODO: Add optional deletion of file from filesystem when removing.
     local function remove_data_file()
         if data_file then
             vim.ui.select({ "Yes", "No" }, {
@@ -100,16 +98,16 @@ M.init = function(config)
         vim.notify("No data file is currently set.", vim.log.levels.WARN)
     end
 
-    -- TODO: Add optional deletion of file from filesystem when removing.
-
+    -- TODO: Add file size or compile time to info output.
+    -- TODO: Option to export or log this information to disk.
     local function get_build_info()
-        local str = function(v)
+        local str = utils.memoize(function(v)
             if type(v) == "string" then
                 return v
             else
                 return table.concat(v, " ")
             end
-        end
+        end)
 
         local lines = {
             "Filetype         : " .. vim.bo.filetype,
@@ -134,9 +132,8 @@ M.init = function(config)
         end
     end
 
-    -- TODO: Add file size or compile time to info output.
-    -- TODO: Option to export or log this information to disk.
-
+    -- TODO: Add a `clean` function to remove exe/asm/data artifacts.
+    -- TODO: Add a `rebuild` function that forces recompile even if hashes match.
     return {
         compile = compile,
         run = run,
@@ -144,8 +141,6 @@ M.init = function(config)
         add_data_file = add_data_file,
         remove_data_file = remove_data_file,
         get_build_info = get_build_info,
-        -- TODO: Add a `clean` function to remove exe/asm/data artifacts.
-        -- TODO: Add a `rebuild` function that forces recompile even if hashes match.
     }
 end
 

@@ -75,13 +75,7 @@ M.get_options_file = function(filename)
     return nil
 end
 
-local data_path_cache = {}
-
 M.get_data_path = function(filename)
-    if data_path_cache[filename] then
-        return data_path_cache[filename]
-    end
-
     if filename then
         local path = vim.fs.find(filename, {
             upward = true,
@@ -89,8 +83,6 @@ M.get_data_path = function(filename)
             path = vim.fn.expand("%:p:h"),
             stop = vim.fn.expand("~"),
         })[1]
-
-        data_path_cache[filename] = path
         return path
     end
 
@@ -143,6 +135,16 @@ M.open = function(title, lines, ft)
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf, noremap = true, nowait = true, silent = true })
 
     return buf
+end
+
+function M.memoize(func)
+    local cache = {}
+    return function(arg)
+        if cache[arg] == nil then
+            cache[arg] = func(arg)
+        end
+        return cache[arg]
+    end
 end
 
 function M.get_modified_time(filepath)

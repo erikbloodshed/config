@@ -4,34 +4,32 @@ local process = require("cpp-tools.process")
 local M = {}
 
 M.translate = function(value, key, cmd)
-    if vim.bo.modified then
-        vim.cmd("silent! write")
-    end
+    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
-    local buffer_hash = utils.get_buffer_hash()
+    if vim.tbl_isempty(diagnostics) then
+        if vim.bo.modified then vim.cmd("silent! write") end
+        local buffer_hash = utils.get_buffer_hash()
 
-    if value[key] ~= buffer_hash then
-        local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+        if value[key] ~= buffer_hash then
+            local obj = process.execute(cmd)
 
-        local obj = process.execute(cmd)
-        -- local obj = vim.system(cmd):wait()
-
-        if obj.code == 0 then
-            value[key] = buffer_hash
-            vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",
-                vim.log.levels.INFO)
-            return true
-        else
-            vim.notify("Source code compilation failed with error " .. obj.stderr .. ".", vim.log.levels.ERROR)
-            return false
+            if obj.code == 0 then
+                value[key] = buffer_hash
+                vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",
+                    vim.log.levels.INFO)
+                return true
+            else
+                vim.notify("Source code compilation failed with error " .. obj.stderr .. ".", vim.log.levels.ERROR)
+                return false
+            end
         end
 
-        utils.goto_first_diagnostic(diagnostics)
-        return false
+        vim.notify("Source code is already compiled.", vim.log.levels.WARN)
+        return true
     end
 
-    vim.notify("Source code is already compiled.", vim.log.levels.WARN)
-    return true
+    utils.goto_first_diagnostic(diagnostics)
+    return false
 end
 
 M.run = function(exe, data_file)
