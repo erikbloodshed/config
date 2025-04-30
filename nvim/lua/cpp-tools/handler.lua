@@ -15,11 +15,11 @@ M.translate = function(value, key, cmd)
 
             if obj.code == 0 then
                 value[key] = buffer_hash
-                vim.notify("Source code compilation successful with exit code " .. obj.code .. ".",
+                vim.notify("Code compilation successful with exit code " .. obj.code .. ".",
                     vim.log.levels.INFO)
                 return true
             else
-                vim.notify("Source code compilation failed with error " .. obj.stderr .. ".", vim.log.levels.ERROR)
+                vim.notify("Compilation failed: " .. obj.error .. ".", vim.log.levels.ERROR)
                 return false
             end
         end
