@@ -156,12 +156,16 @@ function M.get_modified_time(filepath)
     end
 end
 
-function M.flatten_tbl(table)
-    if type(table) == "table" then
-        return vim.iter(table):flatten():totable()
-    else
-        return {}
-    end
+function M.merged_list(list1, list2)
+    local list = {}
+
+    local len1 = #list1
+    for i = 1, len1 do list[i] = list1[i] end
+
+    local len2 = #list2
+    for i = 1, len2 do list[len1 + i] = list2[i] end
+
+    return list
 end
 
 return M

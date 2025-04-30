@@ -35,8 +35,8 @@ M.init = function(config)
 
     -- local compile_command = utils.flatten_tbl({ compiler, flags, "-o", exe_file, src_file })
     -- local assemble_command = utils.flatten_tbl({ compiler, flags, "-S", "-o", asm_file, src_file })
-    local compile_args = { unpack(flags), "-o", exe_file, src_file }
-    local assemble_args = { unpack(flags), "-S", "-o", asm_file, src_file }
+    local compile_args = utils.merged_list(flags, { "-o", exe_file, src_file })
+    local assemble_args = utils.merged_list(flags, { "-S", "-o", asm_file, src_file })
 
     local compile_command = { compiler = compiler, arg = compile_args }
     local assemble_command = { compiler = compiler, arg = assemble_args }
@@ -49,11 +49,9 @@ M.init = function(config)
     -- TODO: Support passing runtime arguments or environment variables.
     local function run()
         if compile() then
-            vim.notify("Compiling...")
             handler.run(exe_file, data_file)
         end
     end
-
 
     -- TODO: Skip assembly generation if existing file is already up-to-date.
     local function show_assembly()
@@ -107,18 +105,10 @@ M.init = function(config)
     -- TODO: Add file size or compile time to info output.
     -- TODO: Option to export or log this information to disk.
     local function get_build_info()
-        local str = utils.memoize(function(v)
-            if type(v) == "string" then
-                return v
-            else
-                return table.concat(v, " ")
-            end
-        end)
-
         local lines = {
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
-            "Compile Flags    : " .. str(flags),
+            "Compile Flags    : " .. table.concat(flags, " "),
             "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or "Not Found"),

@@ -1,7 +1,8 @@
-local utils = require("cpp-tools.utils")
 M = {}
 
 M.init = function(options)
+    local utils = require("cpp-tools.utils")
+
     local config = {
         c = {
             compiler         = "gcc",
@@ -13,7 +14,7 @@ M.init = function(options)
 
         cpp = {
             compiler         = "g++",
-            fallback_flags   = {"-std=c++23", "-O2"},
+            fallback_flags   = { "-std=c++23", "-O2" },
             compile_opts     = nil,
             data_dir_name    = "dat",
             output_directory = "/tmp/",
