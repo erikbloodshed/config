@@ -68,7 +68,7 @@ M.get_options_file = function(filename)
         })[1]
 
         if path then
-            return "@" .. path
+            return { "@" .. path }
         end
     end
 

@@ -33,8 +33,13 @@ M.init = function(config)
 
     local data_file = nil
 
-    local compile_command = utils.flatten_tbl({ compiler, flags, "-o", exe_file, src_file })
-    local assemble_command = utils.flatten_tbl({ compiler, flags, "-S", "-o", asm_file, src_file })
+    -- local compile_command = utils.flatten_tbl({ compiler, flags, "-o", exe_file, src_file })
+    -- local assemble_command = utils.flatten_tbl({ compiler, flags, "-S", "-o", asm_file, src_file })
+    local compile_args = { unpack(flags), "-o", exe_file, src_file }
+    local assemble_args = { unpack(flags), "-S", "-o", asm_file, src_file }
+
+    local compile_command = { compiler = compiler, arg = compile_args }
+    local assemble_command = { compiler = compiler, arg = assemble_args }
 
     -- TODO: Log failure details or errors on compile failure.
     local function compile()
@@ -44,6 +49,7 @@ M.init = function(config)
     -- TODO: Support passing runtime arguments or environment variables.
     local function run()
         if compile() then
+            vim.notify("Compiling...")
             handler.run(exe_file, data_file)
         end
     end

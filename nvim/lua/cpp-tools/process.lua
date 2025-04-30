@@ -49,18 +49,32 @@ end
 --                              or nil if terminated by a signal, or -1 for pre-execution errors.
 --         - error (string|nil): An error message if an issue occurred within this
 --                               function (e.g., spawn failed, pipe read error), otherwise nil.
-function M.execute(cmd_and_args)
+function M.execute(cmd_table)
     local uv = vim.uv -- Get the libuv event loop handle from Neovim
 
     -- Validate input: must be a non-empty table
-    if type(cmd_and_args) ~= 'table' or #cmd_and_args == 0 then
+    if type(cmd_table) ~= 'table' then
         return {
-            error = "Invalid command format (expected non-empty table)",
+            error = "Invalid command format (expected a table)",
             code = -1, -- Use -1 to indicate a function-level failure before execution
         }
     end
 
-    local command_path = cmd_and_args[1]
+    if type(cmd_table.compiler) ~= "string" or cmd_table.compiler == "" then
+        return {
+            error = "Invalid command format: 'compiler' must be a non-empty string'",
+            code = -1,
+        }
+    end
+
+    if type(cmd_table.arg) ~= 'table' then
+         return {
+            error = "Invalid command format: 'arg' must be a table",
+            code = -1,
+        }
+    end
+
+    local command_path = cmd_table.compiler
 
     if vim.fn.executable(command_path) == 0 then
         return {
@@ -69,7 +83,7 @@ function M.execute(cmd_and_args)
         }
     end
 
-    local command_args = { unpack(cmd_and_args, 2) } -- Arguments from the second element onwards
+    local command_args =  cmd_table.arg
 
     -- Setup pipes for standard input, output, and error
     -- These are required by uv.spawn stdio array, even if we discard the output.
