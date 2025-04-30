@@ -13,7 +13,7 @@ M.scan_dir = function(dir)
     -- Use vim.fs.dir to get an iterator for the directory contents
     -- The second argument '{}' can be used for options (like filtering), but we'll filter manually.
     -- The third argument '{ depth = math.huge }' enables recursive scanning.
-    local iter, err = vim.fs.dir(dir, {}, { depth = math.huge })
+    local iter, err = vim.fs.dir(dir, {})
 
     if not iter then
         vim.notify("Failed to scan directory: " .. dir .. (err and (" (" .. err .. ")") or ""), vim.log.levels.ERROR)
