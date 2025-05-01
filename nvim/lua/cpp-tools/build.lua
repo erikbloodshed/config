@@ -128,6 +128,8 @@ M.init = function(config)
         end
     end
 
+
+
     -- TODO: Add a `clean` function to remove exe/asm/data artifacts.
     -- TODO: Add a `rebuild` function that forces recompile even if hashes match.
     return {
@@ -137,6 +139,7 @@ M.init = function(config)
         add_data_file = add_data_file,
         remove_data_file = remove_data_file,
         get_build_info = get_build_info,
+        -- show_diagnostics = show_diagnostics,
     }
 end
 
