@@ -1,49 +1,43 @@
-vim.api.nvim_create_autocmd("Filetype", {
+local diagnostic = vim.diagnostic
+local keymap = vim.keymap.set
+local autocmd = vim.api.nvim_create_autocmd
+local lsp_buf = vim.lsp.buf
+local cmd = vim.cmd
+local setlocal = vim.opt_local
+
+autocmd("Filetype", {
     pattern = { "qf", "help", "query" },
     callback = function(args)
-        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
+        keymap("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
 })
 
-vim.api.nvim_create_autocmd("Filetype", {
+autocmd("Filetype", {
     pattern = { "c", "cpp" },
     callback = function()
-        vim.opt_local.cinkeys:remove(":")
-        vim.opt_local.cindent = true
+        setlocal.cinkeys:remove(":")
+        setlocal.cindent = true
     end,
 })
 
-vim.api.nvim_create_autocmd({ "TermOpen" }, {
+autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
-        vim.cmd.startinsert()
+        cmd.startinsert()
     end,
 })
 
-vim.api.nvim_create_autocmd("LspAttach", {
+autocmd("LspAttach", {
     callback = function(args)
-        vim.diagnostic.config({
-            -- virtual_text = false,
-            virtual_text = { current_line = true },
-            severity_sort = true,
-            float = { border = "rounded" },
-            signs = {
-                text = {
-                    [vim.diagnostic.severity.ERROR] = "",
-                    [vim.diagnostic.severity.WARN] = "󱈸",
-                    [vim.diagnostic.severity.HINT] = "",
-                    [vim.diagnostic.severity.INFO] = "",
-                },
-            },
-        })
+        require("diagnostics")
 
         local opts = { buffer = args.buf }
-        vim.keymap.set("n", "<leader>ed", vim.diagnostic.open_float, opts)
-        vim.keymap.set("n", "<leader>gi", vim.lsp.buf.implementation, opts)
-        vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>fc", function()
-            vim.lsp.buf.format({ async = true })
+        keymap("n", "<leader>ed", diagnostic.open_float, opts)
+        keymap("n", "<leader>gi", lsp_buf.implementation, opts)
+        keymap("n", "<leader>gd", lsp_buf.definition, opts)
+        keymap("n", "<leader>rn", lsp_buf.rename, opts)
+        keymap("n", "<leader>fc", function()
+            lsp_buf.format({ async = true })
         end, opts)
     end,
 })
