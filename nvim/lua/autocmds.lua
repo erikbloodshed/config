@@ -6,17 +6,17 @@ local cmd = vim.cmd
 local setlocal = vim.opt_local
 
 autocmd("Filetype", {
-    pattern = { "qf", "help", "query" },
-    callback = function(args)
-        keymap("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
-    end,
-})
-
-autocmd("Filetype", {
     pattern = { "c", "cpp" },
     callback = function()
         setlocal.cinkeys:remove(":")
         setlocal.cindent = true
+    end,
+})
+
+autocmd("Filetype", {
+    pattern = { "qf", "help", "query" },
+    callback = function(args)
+        keymap("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
 })
 
