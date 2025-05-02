@@ -1,9 +1,10 @@
 -- Setup pretty quickfix formatting
 -- Note: Requires the 'custom_qf' plugin or equivalent setup
-require("custom_qf").setup({
-    show_multiple_lines = true,
-    max_filename_length = 30,
-})
+-- require("custom_qf").setup({
+--     show_multiple_lines = true,
+--     max_filename_length = 30,
+-- })
+require("custom_qf")
 
 local diagnostic = vim.diagnostic
 local severity   = diagnostic.severity
