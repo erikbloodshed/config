@@ -62,4 +62,4 @@ require("options")
 require("autocmds")
 require("ui")
 
-vim.lsp.enable({"basedpyright", "clangd", "luals"})
+vim.lsp.enable({ "basedpyright", "clangd", "luals" })

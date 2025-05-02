@@ -1,3 +1,6 @@
+local api = vim.api
+local keymap = vim.keymap.set
+
 vim.ui.input = function(opts, on_confirm)
     opts = opts or {}
 
@@ -24,56 +27,57 @@ vim.ui.input = function(opts, on_confirm)
 
     if prompt ~= "New Name: " then
         default_win_config.relative = "win"
-        default_win_config.row = math.max(vim.api.nvim_win_get_height(0) / 2 - 1, 0)
-        default_win_config.col = math.max(vim.api.nvim_win_get_width(0) / 2 - input_width / 2, 0)
+        default_win_config.row = math.max(api.nvim_win_get_height(0) / 2 - 1, 0)
+        default_win_config.col = math.max(api.nvim_win_get_width(0) / 2 - input_width / 2, 0)
     end
 
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_open_win(bufnr, true, default_win_config)
-    vim.api.nvim_buf_set_text(bufnr, 0, 0, 0, 0, { default })
+    local bufnr = api.nvim_create_buf(false, true)
+    api.nvim_open_win(bufnr, true, default_win_config)
+    api.nvim_buf_set_text(bufnr, 0, 0, 0, 0, { default })
 
     vim.cmd("startinsert")
-    vim.api.nvim_win_set_cursor(0, { 1, vim.str_utfindex(default) + 1 })
+    api.nvim_win_set_cursor(0, { 1, vim.str_utfindex(default) + 1 })
 
-    vim.keymap.set({ "n", "i", "v" }, "<cr>", function()
-        on_confirm(vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1])
+    keymap({ "n", "i", "v" }, "<cr>", function()
+        on_confirm(api.nvim_buf_get_lines(bufnr, 0, 1, false)[1])
         vim.cmd("stopinsert")
-        vim.defer_fn(function() vim.api.nvim_win_close(0, true) end, 5)
+        vim.defer_fn(function() api.nvim_win_close(0, true) end, 5)
     end, { buffer = bufnr })
 
-    vim.keymap.set("n", "<esc>", function()
+    keymap("n", "<esc>", function()
         on_confirm(nil)
         vim.cmd("stopinsert")
-        vim.defer_fn(function() vim.api.nvim_win_close(0, true) end, 5)
+        vim.defer_fn(function() api.nvim_win_close(0, true) end, 5)
     end, { buffer = bufnr })
-    vim.keymap.set("n", "q", function()
+
+    keymap("n", "q", function()
         on_confirm(nil)
         vim.cmd("stopinsert")
-        vim.defer_fn(function() vim.api.nvim_win_close(0, true) end, 5)
+        vim.defer_fn(function() api.nvim_win_close(0, true) end, 5)
     end, { buffer = bufnr })
 end
 
-vim.api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
+api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
 
 local function close_picker(picker)
-    if vim.api.nvim_win_is_valid(picker.win) then
-        vim.api.nvim_win_close(picker.win, true)
+    if api.nvim_win_is_valid(picker.win) then
+        api.nvim_win_close(picker.win, true)
     end
-    if vim.api.nvim_buf_is_valid(picker.buf) then
-        vim.api.nvim_buf_delete(picker.buf, { force = true })
+    if api.nvim_buf_is_valid(picker.buf) then
+        api.nvim_buf_delete(picker.buf, { force = true })
     end
 end
 
 local function update_highlight(picker)
-    vim.api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
-    vim.api.nvim_buf_add_highlight(picker.buf, picker.ns, "CustomPickerSelection", picker.selected - 1, 0, -1)
+    api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
+    api.nvim_buf_add_highlight(picker.buf, picker.ns, "CustomPickerSelection", picker.selected - 1, 0, -1)
 end
 
 local function move_picker(picker, delta)
     local count = #picker.items
     local new_idx = (picker.selected - 1 + delta) % count + 1
     picker.selected = new_idx
-    vim.api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
+    api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
     update_highlight(picker)
 end
 
@@ -91,10 +95,10 @@ local function pick(opts)
     local row = math.floor((vim.o.lines - height) / 2)
     local col = math.floor((vim.o.columns - width) / 2)
 
-    local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-    local win = vim.api.nvim_open_win(buf, true, {
+    local win = api.nvim_open_win(buf, true, {
         relative = "editor",
         width = width,
         height = height,
@@ -109,7 +113,7 @@ local function pick(opts)
     local picker = {
         buf = buf,
         win = win,
-        ns = vim.api.nvim_create_namespace("custom_picker"),
+        ns = api.nvim_create_namespace("custom_picker"),
         items = opts.items,
         selected = 1,
         actions = opts.actions or {},
@@ -117,12 +121,12 @@ local function pick(opts)
     }
 
     update_highlight(picker)
-    vim.api.nvim_win_set_cursor(win, { 1, 0 })
+    api.nvim_win_set_cursor(win, { 1, 0 })
 
-    vim.keymap.set("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
-    vim.keymap.set("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
+    keymap("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
+    keymap("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
 
-    vim.keymap.set("n", "<CR>", function()
+    keymap("n", "<CR>", function()
         if picker.actions.confirm then
             picker.actions.confirm(picker, picker.items[picker.selected])
         else
@@ -135,8 +139,8 @@ local function pick(opts)
         picker.on_close()
     end
 
-    vim.keymap.set("n", "q", cancel, { buffer = buf })
-    vim.keymap.set("n", "<Esc>", cancel, { buffer = buf })
+    keymap("n", "q", cancel, { buffer = buf })
+    keymap("n", "<Esc>", cancel, { buffer = buf })
 
     return picker
 end

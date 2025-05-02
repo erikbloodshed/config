@@ -1,10 +1,15 @@
-vim.g.loaded_node_provider = 0
-vim.g.loaded_perl_provider = 0
-vim.g.loaded_python3_provider = 0
-vim.g.loaded_ruby_provider = 0
+local g = vim.g
+local set = vim.o
+local setw = vim.wo
+local opt = vim.opt
+
+g.loaded_node_provider = 0
+g.loaded_perl_provider = 0
+g.loaded_python3_provider = 0
+g.loaded_ruby_provider = 0
 
 if vim.fn.has("wsl") == 1 then
-    vim.g.clipboard = {
+    g.clipboard = {
         name = "WslClipboard",
         copy = {
             ["+"] = "clip.exe",
@@ -17,32 +22,32 @@ if vim.fn.has("wsl") == 1 then
         cache_enabled = false,
     }
 else
-    vim.o.clipboard = "unnamedplus"
+    set.clipboard = "unnamedplus"
 end
 
-vim.o.updatetime = 200
-vim.o.timeoutlen = 300
-vim.o.ttimeoutlen = 10
-vim.o.hidden = true
-vim.o.history = 100
-vim.o.number = true
-vim.o.showtabline = 0
-vim.o.splitright = true
-vim.o.swapfile = false
-vim.o.synmaxcol = 128
-vim.wo.signcolumn = "yes"
-vim.wo.cursorline = true
-vim.wo.cursorlineopt = "both"
+set.updatetime = 200
+set.timeoutlen = 300
+set.ttimeoutlen = 10
+set.hidden = true
+set.history = 100
+set.number = true
+set.showtabline = 0
+set.splitright = true
+set.swapfile = false
+set.synmaxcol = 128
+setw.signcolumn = "yes"
+setw.cursorline = true
+setw.cursorlineopt = "both"
 
-vim.o.autowrite = false
-vim.o.expandtab = true
-vim.o.shiftwidth = 4
-vim.o.smartindent = false
-vim.o.smarttab = false
-vim.o.softtabstop = 4
-vim.o.tabstop = 4
-vim.o.wrap = false
+set.autowrite = false
+set.expandtab = true
+set.shiftwidth = 4
+set.smartindent = false
+set.smarttab = false
+set.softtabstop = 4
+set.tabstop = 4
+set.wrap = false
 
-vim.opt.viewoptions:append({ options = true })
-vim.opt.shortmess:append({ c = true, C = true })
-vim.opt.formatoptions:remove({ "c", "r", "o" })
+opt.viewoptions:append({ options = true })
+opt.shortmess:append({ c = true, C = true })
+opt.formatoptions:remove({ "c", "r", "o" })

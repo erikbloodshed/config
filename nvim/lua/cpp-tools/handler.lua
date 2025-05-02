@@ -1,10 +1,14 @@
 local utils = require("cpp-tools.utils")
 local process = require("cpp-tools.process")
+local notify = vim.notify
+local diagnostic = vim.diagnostic
+local ERROR = vim.log.levels.ERROR
+local WARN = vim.log.levels.WARN
 
 local M = {}
 
 M.translate = function(value, key, cmd)
-    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+    local diagnostics = diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
     if vim.tbl_isempty(diagnostics) then
         if vim.bo.modified then vim.cmd("silent! write") end
@@ -15,16 +19,16 @@ M.translate = function(value, key, cmd)
 
             if obj.code == 0 then
                 value[key] = buffer_hash
-                vim.notify("Code compilation successful with exit code " .. obj.code .. ".",
+                notify("Code compilation successful with exit code " .. obj.code .. ".",
                     vim.log.levels.INFO)
                 return true
             else
-                vim.notify("Compilation failed: " .. obj.error .. ".", vim.log.levels.ERROR)
+                notify("Compilation failed: " .. obj.error .. ".", ERROR)
                 return false
             end
         end
 
-        vim.notify("Source code is already compiled.", vim.log.levels.WARN)
+        notify("Source code is already compiled.", WARN)
         return true
     end
 
@@ -42,7 +46,7 @@ M.run = function(exe, data_file)
         if vim.b.terminal_job_id then
             vim.api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
         else
-            vim.notify("Could not get terminal job ID to send command.", vim.log.levels.WARN)
+            notify("Could not get terminal job ID to send command.", WARN)
         end
     end, 100)
 end

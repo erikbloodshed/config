@@ -1,12 +1,8 @@
 local M = {}
--- Optimized directory scanning function
--- This version improves performance by:
--- 1. Using local references to frequently used functions
--- 2. Pre-allocating the result table size when possible
--- 3. Reducing string operations in hot paths
--- 4. Optimizing the sorting algorithm for large directories
--- 5. Minimizing redundant checks
--- 6. Using more efficient path handling
+
+local notify = vim.notify
+local WARN = vim.log.levels.WARN
+
 M.scan_dir = function(dir)
     -- Use local references for frequently accessed functions
     local uv_fs_stat = vim.uv.fs_stat
@@ -16,14 +12,14 @@ M.scan_dir = function(dir)
 
     -- Return empty on nil input
     if not dir or dir == "" then
-        vim.notify("Invalid directory path", vim.log.levels.WARN)
+        notify("Invalid directory path", WARN)
         return {}
     end
 
     -- Fast path for directory existence check
     local stat = uv_fs_stat(dir)
     if not stat or stat.type ~= "directory" then
-        vim.notify("Directory not found or is not a directory: " .. dir, vim.log.levels.WARN)
+        notify("Directory not found or is not a directory: " .. dir, WARN)
         return {}
     end
 
@@ -37,7 +33,7 @@ M.scan_dir = function(dir)
         if err then
             msg = msg .. " (" .. err .. ")"
         end
-        vim.notify(msg, vim.log.levels.ERROR)
+        notify(msg, vim.log.levels.ERROR)
         return {}
     end
 

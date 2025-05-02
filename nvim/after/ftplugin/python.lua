@@ -1,6 +1,6 @@
 local py_file = vim.fn.expand("%:~"):gsub(" ", "\\ ")
 
-vim.keymap.set({ "i", "n" }, "<leader>rr", function()
+vim.keymap.set({ "n" }, "<leader>rr", function()
     local diagnostics = vim.diagnostic.get(0, {
         severity = {
             vim.diagnostic.severity.ERROR,
@@ -9,7 +9,6 @@ vim.keymap.set({ "i", "n" }, "<leader>rr", function()
     })
 
     if next(diagnostics) ~= nil then
-        require("trouble").open("diagnostics", { buf = 0 })
         return
     end
 

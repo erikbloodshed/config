@@ -136,4 +136,4 @@ autocmd("DiagnosticChanged", {
     end,
 })
 
-keymap("n", "<leader>qq", toggle_loclist, { buffer = true, desc = "Toggle diagnostics location list" })
+keymap("n", "<leader>xx", toggle_loclist, { buffer = true, desc = "Toggle diagnostics location list" })
