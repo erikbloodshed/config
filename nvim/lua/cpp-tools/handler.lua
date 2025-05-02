@@ -1,5 +1,6 @@
 local utils = require("cpp-tools.utils")
 local process = require("cpp-tools.process")
+local open_loclist = require("diagnostics").open_loclist
 local notify = vim.notify
 local diagnostic = vim.diagnostic
 local ERROR = vim.log.levels.ERROR
@@ -32,7 +33,7 @@ M.translate = function(value, key, cmd)
         return true
     end
 
-    utils.goto_first_diagnostic(diagnostics)
+    open_loclist()
     return false
 end
 

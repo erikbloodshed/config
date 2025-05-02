@@ -1,33 +1,16 @@
 -- Setup pretty quickfix formatting
 -- Note: Requires the 'custom_qf' plugin or equivalent setup
--- require("custom_qf").setup({
---     show_multiple_lines = true,
---     max_filename_length = 30,
--- })
-require("custom_qf")
+require("custom_qf").setup({
+    show_multiple_lines = false,
+    max_filename_length = 30,
+})
 
 local diagnostic = vim.diagnostic
-local severity   = diagnostic.severity
 local vim_fn     = vim.fn
 local keymap     = vim.keymap.set
 local autocmd    = vim.api.nvim_create_autocmd
 local api        = vim.api
 local cmd        = vim.cmd
-
--- Configure Neovim's built-in diagnostics
-diagnostic.config({
-    virtual_text = false,           -- Disable virtual text diagnostics
-    severity_sort = true,           -- Sort diagnostics by severity
-    float = { border = "rounded" }, -- Set rounded border for diagnostic float window
-    signs = {                       -- Define custom text signs for different severity levels
-        text = {
-            [severity.ERROR] = "",
-            [severity.WARN] = "󱈸",
-            [severity.HINT] = "",
-            [severity.INFO] = "",
-        },
-    },
-})
 
 --- Jumps from the current line in the location list to the corresponding diagnostic in the buffer.
 --- Closes the location list after jumping.
@@ -86,26 +69,6 @@ local function open_loclist()
     end
 end
 
---- Closes the location list if it's open.
-local function close_loclist()
-    local loclist_info = vim_fn.getloclist(0, { winid = 0 })
-    if loclist_info.winid ~= 0 then
-        cmd("lclose")
-    end
-end
-
---- Toggles the visibility of the location list populated with diagnostics.
-local function toggle_loclist()
-    local loclist_info = vim_fn.getloclist(0, { winid = 0 })
-    local is_open = loclist_info.winid ~= 0
-
-    if is_open then
-        close_loclist()
-    else
-        open_loclist()
-    end
-end
-
 -- Autocommand to handle changes in diagnostics
 autocmd("DiagnosticChanged", {
     callback = function(args)
@@ -119,23 +82,14 @@ autocmd("DiagnosticChanged", {
                 cmd.lclose()
             end)
         end
-
-        -- If loclist is open, refresh its contents when diagnostics change.
-        -- Note: Populating the loclist is implicitly handled by Neovim's
-        -- diagnostic system when diagnostics change in a buffer.
-        -- We just need to ensure the window remains or is updated if needed.
-        -- Explicitly repopulating here with `open_loclist()` when it's already
-        -- open would close and reopen it, which might not be desired.
-        -- The current setup with `DiagnosticChanged` triggering on changes
-        -- should keep the loclist populated if it's open and configured
-        -- to show buffer diagnostics. The previous `open_loclist({open=false})`
-        -- likely intended a refresh mechanism that isn't standard or clear.
-        -- Removing that potentially confusing call. The `jump_from_loclist`
-        -- and `toggle_loclist` functions rely on `getloclist(0)` reflecting
-        -- the current state, which Neovim manages.
     end,
 })
 
 
 -- Define keymap to toggle the diagnostics location list
-keymap("n", "<leader>qq", toggle_loclist, { buffer = true, desc = "Toggle diagnostics location list" })
+keymap("n", "<leader>xx", open_loclist, { buffer = true, desc = "Toggle diagnostics location list" })
+
+return {
+    jump_from_loclist = jump_from_loclist,
+    open_loclist = open_loclist,
+}

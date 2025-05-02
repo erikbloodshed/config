@@ -1,9 +1,10 @@
 local diagnostic = vim.diagnostic
-local keymap = vim.keymap.set
-local autocmd = vim.api.nvim_create_autocmd
-local lsp_buf = vim.lsp.buf
-local cmd = vim.cmd
-local setlocal = vim.opt_local
+local keymap     = vim.keymap.set
+local autocmd    = vim.api.nvim_create_autocmd
+local lsp_buf    = vim.lsp.buf
+local cmd        = vim.cmd
+local setlocal   = vim.opt_local
+local severity   = diagnostic.severity
 
 autocmd("Filetype", {
     pattern = { "c", "cpp" },
@@ -29,6 +30,20 @@ autocmd({ "TermOpen" }, {
 
 autocmd("LspAttach", {
     callback = function(args)
+        -- Configure Neovim's built-in diagnostics
+        diagnostic.config({
+            virtual_text = false,           -- Disable virtual text diagnostics
+            severity_sort = true,           -- Sort diagnostics by severity
+            float = { border = "rounded" }, -- Set rounded border for diagnostic float window
+            signs = {                       -- Define custom text signs for different severity levels
+                text = {
+                    [severity.ERROR] = "",
+                    [severity.WARN] = "󱈸",
+                    [severity.HINT] = "",
+                    [severity.INFO] = "",
+                },
+            },
+        })
         require("diagnostics")
 
         local opts = { buffer = args.buf }

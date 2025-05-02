@@ -1,35 +1,72 @@
+--[[
+  custom_qf.lua - A custom quickfix formatter for Neovim
+
+  This module improves the appearance of quickfix and location list windows by:
+  1. Adding diagnostic signs (E/W/I/H) with appropriate highlighting
+  2. Highlighting file paths using the Directory highlight group
+  3. Highlighting line/column numbers using the Number highlight group
+  4. Highlighting diagnostic messages with the same highlight as their signs
+  5. Supporting path truncation for long file paths
+--]]
+
 local api = vim.api
 local fn = vim.fn
 
-local signs = vim.g.custom_qf_signs or {
+local M = {}
+
+-- Define the sign symbols and their highlight groups for different diagnostic types
+local signs = {
     error = { text = 'E', hl = 'DiagnosticSignError' },
     warning = { text = 'W', hl = 'DiagnosticSignWarn' },
     info = { text = 'I', hl = 'DiagnosticSignInfo' },
     hint = { text = 'H', hl = 'DiagnosticSignHint' },
 }
 
-local show_multiple_lines = vim.g.custom_qf_show_multiple_lines or false
-local max_filename_length = vim.g.custom_qf_max_filename_length or 0
-local filename_truncate_prefix = vim.g.custom_qf_filename_truncate_prefix or '[...]'
-
+-- Create a unique namespace for our buffer highlights
 local namespace = api.nvim_create_namespace('custom_qf')
+-- Configuration settings with defaults
+local show_multiple_lines = false        -- Whether to show multi-line messages
+local max_filename_length = 0            -- Maximum length for filenames (0 = no limit)
+local filename_truncate_prefix = '[...]' -- Prefix to show when truncating
 
-local function pad_right(str, pad_to)
-    if pad_to == 0 then return str end
-    local new = str
-    for _ = fn.strwidth(str), pad_to do new = new .. ' ' end
+-- Pads a string with spaces to reach the desired width
+-- @param string The string to pad
+-- @param pad_to The total width to pad to
+-- @return The padded string
+local function pad_right(string, pad_to)
+    local new = string
+
+    if pad_to == 0 then
+        return string
+    end
+
+    for _ = fn.strwidth(string), pad_to do
+        new = new .. ' '
+    end
+
     return new
 end
 
+-- Truncates a file path if it exceeds the maximum length
+-- @param path The file path to potentially truncate
+-- @return The (possibly) truncated path
 local function trim_path(path)
+    -- Convert to relative path
     local fname = fn.fnamemodify(path, ':p:.')
     local len = fn.strchars(fname)
+
+    -- Truncate if configured maximum length is exceeded
     if max_filename_length > 0 and len > max_filename_length then
-        fname = filename_truncate_prefix .. fn.strpart(fname, len - max_filename_length, max_filename_length, 1)
+        fname = filename_truncate_prefix
+            .. fn.strpart(fname, len - max_filename_length, max_filename_length, 1)
     end
+
     return fname
 end
 
+-- Gets either quickfix or location list items based on info
+-- @param info The quickfix formatting info from Neovim
+-- @return Table containing the list items and buffer number
 local function list_items(info)
     if info.quickfix == 1 then
         return fn.getqflist({ id = info.id, items = 1, qfbufnr = 1 })
@@ -38,88 +75,179 @@ local function list_items(info)
     end
 end
 
+-- Applies all collected highlights to the buffer
+-- @param bufnr The buffer to apply highlights to
+-- @param highlights Table of highlight definitions to apply
 local function apply_highlights(bufnr, highlights)
     for _, hl in ipairs(highlights) do
-        vim.highlight.range(bufnr, namespace, hl.group, { hl.line, hl.col }, { hl.line, hl.end_col })
+        vim.highlight.range(
+            bufnr,
+            namespace,
+            hl.group,
+            { hl.line, hl.col },
+            { hl.line, hl.end_col }
+        )
     end
 end
 
-function _G.custom_qf_format(info)
+-- Main formatting function called by Neovim's quickfixtextfunc
+-- @param info Table containing formatting information from Neovim
+-- @return Table of formatted strings for each quickfix/location list item
+function M.format(info)
+    -- Get the list items and buffer number
     local list = list_items(info)
-    local qf_bufnr, raw_items = list.qfbufnr, list.items
-    local lines, highlights = {}, {}
-    local pad_to, show_sign = 0, false
+    local qf_bufnr = list.qfbufnr
+    local raw_items = list.items
+    local lines = {}
+    local pad_to = 0 -- For aligning text across all lines
 
+    -- Map single-letter type codes to our sign configurations
     local type_mapping = {
-        E = signs.error,
-        W = signs.warning,
-        I = signs.info,
-        N = signs.hint,
+        E = signs.error, -- Error
+        W = signs.warning, -- Warning
+        I = signs.info, -- Information
+        N = signs.hint, -- Note/Hint
     }
 
+    local items = {}
+    local show_sign = false -- Will be set to true if any item has a valid type
+
+    -- Clear existing highlights when creating a new list
     if info.start_idx == 1 then
         api.nvim_buf_clear_namespace(qf_bufnr, namespace, 0, -1)
     end
 
-    local items = {}
+    -- First pass: collect and process all items
     for i = info.start_idx, info.end_idx do
         local raw = raw_items[i]
+
         if raw then
+            -- Create a processed item with all the information we need
             local item = {
-                type = raw.type, text = raw.text, index = i,
-                location = '', path_size = 0, line_col_size = 0,
+                type = raw.type, -- Diagnostic type (E/W/I/N)
+                text = raw.text, -- Message text
+                location = '', -- File path + line/col (to be built)
+                path_size = 0, -- Length of just the file path part
+                line_col_size = 0, -- Length of just the line/col part
+                index = i, -- Original index for positioning
             }
 
-            if type_mapping[item.type] then show_sign = true end
+            -- Check if this item has a valid diagnostic type
+            if type_mapping[item.type] then
+                show_sign = true
+            end
+
+            -- Add file path to location if available
             if raw.bufnr > 0 then
                 item.location = trim_path(fn.bufname(raw.bufnr))
                 item.path_size = #item.location
             end
 
+            -- Add line and column numbers to location if available
             if raw.lnum and raw.lnum > 0 then
                 local lnum = raw.lnum
+
+                -- Handle multi-line spans
                 if raw.end_lnum and raw.end_lnum > 0 and raw.end_lnum ~= lnum then
                     lnum = lnum .. '-' .. raw.end_lnum
                 end
-                item.location = (#item.location > 0 and item.location .. ' ' or '') .. lnum
+
+                -- Append line number to location
+                if #item.location > 0 then
+                    item.location = item.location .. ' ' .. lnum
+                else
+                    item.location = tostring(lnum)
+                end
+
+                -- Add column information if available
                 if raw.col and raw.col > 0 then
                     local col = raw.col
+
+                    -- Handle multi-column spans
                     if raw.end_col and raw.end_col > 0 and raw.end_col ~= col then
                         col = col .. '-' .. raw.end_col
                     end
+
                     item.location = item.location .. ':' .. col
                 end
+
+                -- Calculate the size of just the line/col part
                 item.line_col_size = #item.location - item.path_size
             end
 
-            pad_to = math.max(pad_to, fn.strwidth(item.location))
+            -- Track the maximum location width for alignment
+            local size = fn.strwidth(item.location)
+            if size > pad_to then
+                pad_to = size
+            end
+
             table.insert(items, item)
         end
     end
 
+    -- Collection for our highlight specifications
+    local highlights = {}
+
+    -- Second pass: format items and collect highlights
     for _, item in ipairs(items) do
-        local line_idx = item.index - 1
-        local text = fn.trim((show_multiple_lines and fn.substitute(item.text, '\n\\s*', ' ', 'g')) or vim.split(item.text, '\n')[1])
-        local location = text ~= '' and pad_right(item.location, pad_to) or item.location
+        local line_idx = item.index - 1 -- 0-indexed for buffer operations
+
+        -- Get just the first line of the message by default
+        -- (Quickfix window doesn't handle newlines well)
+        local text = vim.split(item.text, '\n')[1]
+        local location = item.location
+
+        -- Alternative: join multiple lines with spaces if enabled
+        if show_multiple_lines then
+            text = fn.substitute(item.text, '\n\\s*', ' ', 'g')
+        end
+
+        -- Trim whitespace from the message text
+        text = fn.trim(text)
+
+        -- Only pad the location if there's actually text to show
+        if text ~= '' then
+            location = pad_right(location, pad_to)
+        end
+
+        -- Get the sign configuration for this item type
         local sign_conf = type_mapping[item.type]
-        local sign = (show_sign and sign_conf and sign_conf.text) or ' '
-        local sign_hl = sign_conf and sign_conf.hl
+        local sign = ' ' -- Default to space if no type or unknown type
+        local sign_hl = nil
+
+        if sign_conf then
+            sign = sign_conf.text
+            sign_hl = sign_conf.hl
+        end
+
+        -- Build the complete line: sign + location + message
         local prefix = show_sign and sign .. ' ' or ''
         local line = prefix .. location .. text
-        if line == '' then line = ' ' end
 
+        -- Workaround for empty lines (prevents Vim's default "|| " formatting)
+        if line == '' then
+            line = ' '
+        end
+
+        -- Add highlight for the sign if available
         if show_sign and sign_hl then
-            table.insert(highlights, { group = sign_hl, line = line_idx, col = 0, end_col = #sign })
+            table.insert(
+                highlights,
+                { group = sign_hl, line = line_idx, col = 0, end_col = #sign }
+            )
+
+            -- Highlight the message text with the same highlight group as the sign
+            -- This is the key feature that makes messages match their signs
             if text ~= '' then
-                table.insert(highlights, {
-                    group = sign_hl,
-                    line = line_idx,
-                    col = #prefix + #location,
-                    end_col = #line,
-                })
+                local text_start = #prefix + #location
+                table.insert(
+                    highlights,
+                    { group = sign_hl, line = line_idx, col = text_start, end_col = #line }
+                )
             end
         end
 
+        -- Highlight the file path with Directory highlight group
         if item.path_size > 0 then
             table.insert(highlights, {
                 group = 'Directory',
@@ -129,23 +257,83 @@ function _G.custom_qf_format(info)
             })
         end
 
+        -- Highlight line/column numbers with Number highlight group
         if item.line_col_size > 0 then
+            local col_start = #prefix + item.path_size
+
             table.insert(highlights, {
                 group = 'Number',
                 line = line_idx,
-                col = #prefix + item.path_size,
-                end_col = #prefix + item.path_size + item.line_col_size,
+                col = col_start,
+                end_col = col_start + item.line_col_size,
             })
         end
 
+        -- Add the formatted line to our result list
         table.insert(lines, line)
     end
 
+    -- Schedule highlights to be applied after the quickfix window is populated
+    -- (immediate application won't work as the lines aren't in the buffer yet)
     vim.schedule(function()
         apply_highlights(qf_bufnr, highlights)
     end)
 
+    -- Return formatted lines for Neovim to display
     return lines
 end
 
-vim.opt.quickfixtextfunc = "v:lua.custom_qf_format"
+-- Initialize the module with user configuration
+-- @param opts Table of configuration options:
+--   - signs: Table of custom sign configurations
+--   - show_multiple_lines: Boolean to enable multi-line messages
+--   - max_filename_length: Number for max filename length (0 = no limit)
+--   - filename_truncate_prefix: String prefix for truncated filenames
+function M.setup(opts)
+    opts = opts or {}
+
+    -- Override default signs with user-provided ones
+    if opts.signs then
+        assert(type(opts.signs) == 'table', 'the "signs" option must be a table')
+        signs = vim.tbl_deep_extend('force', signs, opts.signs)
+    end
+
+    -- Enable showing multiple lines joined with spaces
+    if opts.show_multiple_lines then
+        show_multiple_lines = true
+    end
+
+    -- Set maximum filename length for truncation
+    if opts.max_filename_length then
+        max_filename_length = opts.max_filename_length
+        assert(
+            type(max_filename_length) == 'number',
+            'the "max_filename_length" option must be a number'
+        )
+    end
+
+    -- Set the prefix to show when filenames are truncated
+    if opts.filename_truncate_prefix then
+        filename_truncate_prefix = opts.filename_truncate_prefix
+        assert(
+            type(filename_truncate_prefix) == 'string',
+            'the "filename_truncate_prefix" option must be a string'
+        )
+    end
+
+    -- Register our format function with Neovim
+    vim.opt.quickfixtextfunc = "v:lua.require'custom_qf'.format"
+end
+
+-- Example usage:
+-- require('custom_qf').setup({
+--   signs = {
+--     error = { text = '✘', hl = 'DiagnosticSignError' },
+--     warning = { text = '▲', hl = 'DiagnosticSignWarn' },
+--   },
+--   show_multiple_lines = true,
+--   max_filename_length = 40,
+--   filename_truncate_prefix = '...',
+-- })
+
+return M
