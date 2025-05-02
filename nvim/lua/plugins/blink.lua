@@ -42,7 +42,7 @@ return {
         snippets = { preset = "luasnip" },
         appearance = { use_nvim_cmp_as_default = false },
         sources = {
-            default = { "lazydev", "lsp", "snippets", "path" },
+            default = { "lsp", "snippets", "path" },
             providers = {
                 lsp = {
                     transform_items = function(_, items)
@@ -50,11 +50,6 @@ return {
                             return not item.deprecated
                         end, items)
                     end,
-                },
-                lazydev = {
-                    name = "LazyDev",
-                    module = "lazydev.integrations.blink",
-                    score_offset = 100,
                 },
             },
         },

@@ -16,7 +16,7 @@ autocmd("Filetype", {
 autocmd("Filetype", {
     pattern = { "qf", "help", "query" },
     callback = function(args)
-        keymap("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
+        keymap("n", "q", cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
 })
 
