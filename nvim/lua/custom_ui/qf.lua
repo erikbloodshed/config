@@ -356,7 +356,7 @@ function M.setup(opts)
     create_highlight_groups()
 
     -- Register our format function with Neovim
-    vim.opt.quickfixtextfunc = "v:lua.require'ui.qf'.format"
+    vim.opt.quickfixtextfunc = "v:lua.require'custom_ui.qf'.format"
 end
 
 -- Example usage:

@@ -9,7 +9,9 @@ local severity   = diagnostic.severity
 autocmd({ "BufEnter" }, {
     pattern = { "*" },
     callback = function()
-        require("ui.qf").setup({
+        require("custom_ui.input")
+        require("custom_ui.select")
+        require("custom_ui.qf").setup({
             show_multiple_lines = false,
             max_filename_length = 30,
         })
