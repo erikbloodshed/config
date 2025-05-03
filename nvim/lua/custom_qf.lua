@@ -271,7 +271,8 @@ function M.format(info)
         end
 
         -- Check for and highlight phrases like "(fix available)" with italic
-        local fix_annotation_start = text:find("%([^%)]+%)") -- Find text in parentheses
+        -- local fix_annotation_start = text:find("%([^%)]+%)") -- Find text in parentheses
+        local fix_annotation_start = text:find("%(fix available%)") -- Find text in parentheses
         if fix_annotation_start then
             local fix_annotation_end = text:find("%)", fix_annotation_start)
             if fix_annotation_end then
