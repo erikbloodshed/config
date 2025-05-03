@@ -1,10 +1,5 @@
 -- Setup pretty quickfix formatting
 -- Note: Requires the 'custom_qf' plugin or equivalent setup
-require("custom_qf").setup({
-    show_multiple_lines = false,
-    max_filename_length = 30,
-})
-
 local diagnostic = vim.diagnostic
 local keymap     = vim.keymap.set
 local autocmd    = vim.api.nvim_create_autocmd
