@@ -15,7 +15,7 @@ autocmd("Filetype", {
 })
 
 autocmd("Filetype", {
-    pattern = { "qf", "help", "query" },
+    pattern = { "help", "qf" },
     callback = function(args)
         keymap("n", "q", cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
