@@ -17,10 +17,10 @@ local M = {}
 
 -- Define the sign symbols and their highlight groups for different diagnostic types
 local signs = {
-    error = { text = 'E', hl = 'DiagnosticSignError' },
+    error   = { text = 'E', hl = 'DiagnosticSignError' },
     warning = { text = 'W', hl = 'DiagnosticSignWarn' },
-    info = { text = 'I', hl = 'DiagnosticSignInfo' },
-    hint = { text = 'H', hl = 'DiagnosticSignHint' },
+    info    = { text = 'I', hl = 'DiagnosticSignInfo' },
+    hint    = { text = 'H', hl = 'DiagnosticSignHint' },
 }
 
 -- Create a unique namespace for our buffer highlights
@@ -28,7 +28,7 @@ local namespace = api.nvim_create_namespace('custom_qf')
 -- Configuration settings with defaults
 local show_multiple_lines = false        -- Whether to show multi-line messages
 local max_filename_length = 0            -- Maximum length for filenames (0 = no limit)
-local filename_truncate_prefix = '[...]' -- Prefix to show when truncating
+local filename_truncate_prefix = '...' -- Prefix to show when truncating
 
 -- Pads a string with spaces to reach the desired width
 -- @param string The string to pad
