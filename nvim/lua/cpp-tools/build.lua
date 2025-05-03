@@ -108,10 +108,10 @@ M.init = function(config)
     -- TODO: Option to export or log this information to disk.
     local function get_build_info()
         local lines = {
+            "Filename         : " .. vim.fn.fnamemodify(src_file, ':t'),
             "Filetype         : " .. vim.bo.filetype,
             "Compiler         : " .. compiler,
             "Compile Flags    : " .. table.concat(flags, " "),
-            "Source           : " .. src_file,
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or "Not Found"),
             "Data File In Use : " .. (data_file and vim.fn.fnamemodify(data_file, ':t') or "None"),

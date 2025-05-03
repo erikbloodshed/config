@@ -2,7 +2,7 @@
   custom_qf.lua - A custom quickfix formatter for Neovim
 
   This module improves the appearance of quickfix and location list windows by:
-  1. Adding diagnostic signs (E/W/I/H) with appropriate highlighting
+  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
   2. Highlighting file paths using the Directory highlight group
   3. Highlighting line/column numbers using the Number highlight group
   4. Highlighting diagnostic messages with the same highlight as their signs
@@ -17,17 +17,17 @@ local M = {}
 
 -- Define the sign symbols and their highlight groups for different diagnostic types
 local signs = {
-    error   = { text = 'E', hl = 'DiagnosticSignError' },
-    warning = { text = 'W', hl = 'DiagnosticSignWarn' },
-    info    = { text = 'I', hl = 'DiagnosticSignInfo' },
-    hint    = { text = 'H', hl = 'DiagnosticSignHint' },
+    error   = { text = '', hl = 'DiagnosticSignError' },
+    warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
+    info    = { text = '', hl = 'DiagnosticSignInfo' },
+    hint    = { text = '', hl = 'DiagnosticSignHint' },
 }
 
 -- Create a unique namespace for our buffer highlights
 local namespace = api.nvim_create_namespace('custom_qf')
 -- Configuration settings with defaults
-local show_multiple_lines = false        -- Whether to show multi-line messages
-local max_filename_length = 0            -- Maximum length for filenames (0 = no limit)
+local show_multiple_lines = false      -- Whether to show multi-line messages
+local max_filename_length = 0          -- Maximum length for filenames (0 = no limit)
 local filename_truncate_prefix = '...' -- Prefix to show when truncating
 
 -- Pads a string with spaces to reach the desired width
@@ -272,7 +272,9 @@ function M.format(info)
 
         -- Check for and highlight phrases like "(fix available)" with italic
         -- local fix_annotation_start = text:find("%([^%)]+%)") -- Find text in parentheses
-        local fix_annotation_start = text:find("%(fix available%)") -- Find text in parentheses
+        -- local fix_annotation_start = text:find("%(fix available%)") -- Find text in parentheses
+        local fix_annotation_start = text:find("%([^)]*fix[^)]*%)")
+
         if fix_annotation_start then
             local fix_annotation_end = text:find("%)", fix_annotation_start)
             if fix_annotation_end then

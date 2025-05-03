@@ -19,7 +19,7 @@ local function open_loclist()
 
     -- Open the location list window
     diagnostic.setloclist({ open = false, title = "Diagnostics" })
-    local height = math.min(math.max(#diagnostics_list, 3), 10) -- Determine optimal window height
+    local height = math.min(math.max(#diagnostics_list, 3), 6) -- Determine optimal window height
     cmd("lopen " .. height)
 end
 
