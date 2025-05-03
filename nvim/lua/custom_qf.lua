@@ -7,6 +7,7 @@
   3. Highlighting line/column numbers using the Number highlight group
   4. Highlighting diagnostic messages with the same highlight as their signs
   5. Supporting path truncation for long file paths
+  6. Making annotations like "(fix available)" appear in italic
 --]]
 
 local api = vim.api
@@ -103,10 +104,10 @@ function M.format(info)
 
     -- Map single-letter type codes to our sign configurations
     local type_mapping = {
-        E = signs.error, -- Error
+        E = signs.error,   -- Error
         W = signs.warning, -- Warning
-        I = signs.info, -- Information
-        N = signs.hint, -- Note/Hint
+        I = signs.info,    -- Information
+        N = signs.hint,    -- Note/Hint
     }
 
     local items = {}
@@ -124,12 +125,12 @@ function M.format(info)
         if raw then
             -- Create a processed item with all the information we need
             local item = {
-                type = raw.type, -- Diagnostic type (E/W/I/N)
-                text = raw.text, -- Message text
-                location = '', -- File path + line/col (to be built)
-                path_size = 0, -- Length of just the file path part
+                type = raw.type,   -- Diagnostic type (E/W/I/N)
+                text = raw.text,   -- Message text
+                location = '',     -- File path + line/col (to be built)
+                path_size = 0,     -- Length of just the file path part
                 line_col_size = 0, -- Length of just the line/col part
-                index = i, -- Original index for positioning
+                index = i,         -- Original index for positioning
             }
 
             -- Check if this item has a valid diagnostic type
@@ -269,6 +270,21 @@ function M.format(info)
             })
         end
 
+        -- Check for and highlight phrases like "(fix available)" with italic
+        local fix_annotation_start = text:find("%([^%)]+%)") -- Find text in parentheses
+        if fix_annotation_start then
+            local fix_annotation_end = text:find("%)", fix_annotation_start)
+            if fix_annotation_end then
+                local text_start = #prefix + #location
+                table.insert(highlights, {
+                    group = 'Comment', -- Comment group typically uses italic formatting
+                    line = line_idx,
+                    col = text_start + fix_annotation_start - 1,
+                    end_col = text_start + fix_annotation_end,
+                })
+            end
+        end
+
         -- Add the formatted line to our result list
         table.insert(lines, line)
     end
@@ -281,6 +297,18 @@ function M.format(info)
 
     -- Return formatted lines for Neovim to display
     return lines
+end
+
+-- Create a custom highlight group for annotations (if user wants custom styling)
+local function create_highlight_groups()
+    -- Check if our custom highlight group already exists
+    local exists = pcall(api.nvim_get_hl_by_name, 'QfAnnotation', true)
+
+    if not exists then
+        -- Create a custom highlight group for annotations that links to Comment
+        -- The Comment highlight group typically uses italic formatting
+        vim.cmd('highlight default link QfAnnotation Comment')
+    end
 end
 
 -- Initialize the module with user configuration
@@ -320,6 +348,9 @@ function M.setup(opts)
             'the "filename_truncate_prefix" option must be a string'
         )
     end
+
+    -- Create our custom highlight groups
+    create_highlight_groups()
 
     -- Register our format function with Neovim
     vim.opt.quickfixtextfunc = "v:lua.require'custom_qf'.format"

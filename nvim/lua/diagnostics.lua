@@ -73,15 +73,15 @@ end
 autocmd("DiagnosticChanged", {
     callback = function(args)
         local diagnostics = args.data.diagnostics
-        local loclist_info = vim_fn.getloclist(0, { winid = 0 })
-        local is_loclist_open = loclist_info.winid ~= 0
 
-        -- Close loclist if diagnostics are cleared and it's open
-        if vim.tbl_isempty(diagnostics) and is_loclist_open then
+        if #diagnostics == 0 then
             vim.schedule(function()
                 cmd.lclose()
             end)
         end
+
+        diagnostic.setloclist({ open = false, title = "Diagnostics" })
+
     end,
 })
 
