@@ -1,39 +1,37 @@
-local utils = require("cpp-tools.utils")
-local process = require("cpp-tools.process")
-local open_loclist = require("diagnostics").open_loclist
-local notify = vim.notify
-local diagnostic = vim.diagnostic
-local ERROR = vim.log.levels.ERROR
-local WARN = vim.log.levels.WARN
-
 local M = {}
 
-M.translate = function(value, key, cmd)
-    local diagnostics = diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+local get_buffer_hash = function()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+    local content = table.concat(lines, "\n")
+    return vim.fn.sha256(content)
+end
 
-    if vim.tbl_isempty(diagnostics) then
+M.translate = function(value, key, cmd)
+    local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+
+    if #diagnostics == 0 then
         if vim.bo.modified then vim.cmd("silent! write") end
-        local buffer_hash = utils.get_buffer_hash()
+        local buffer_hash = get_buffer_hash()
 
         if value[key] ~= buffer_hash then
-            local obj = process.execute(cmd)
+            local obj = require("cpp-tools.process").execute(cmd)
 
             if obj.code == 0 then
                 value[key] = buffer_hash
-                notify("Code compilation successful with exit code " .. obj.code .. ".",
+                vim.notify("Code compilation successful with exit code " .. obj.code .. ".",
                     vim.log.levels.INFO)
                 return true
             else
-                notify("Compilation failed: " .. obj.error .. ".", ERROR)
+                vim.notify("Compilation failed: " .. obj.error .. ".", vim.log.levels.ERROR)
                 return false
             end
         end
 
-        notify("Source code is already compiled.", WARN)
+        vim.notify("Source code is already compiled.", vim.log.levels.WARN)
         return true
     end
 
-    open_loclist()
+    require("diagnostics").open_loclist()
     return false
 end
 
@@ -47,7 +45,7 @@ M.run = function(exe, data_file)
         if vim.b.terminal_job_id then
             vim.api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
         else
-            notify("Could not get terminal job ID to send command.", WARN)
+            vim.notify("Could not get terminal job ID to send command.", vim.log.levels.WARN)
         end
     end, 100)
 end

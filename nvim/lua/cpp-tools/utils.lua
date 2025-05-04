@@ -1,8 +1,5 @@
 local M = {}
 
-local notify = vim.notify
-local WARN = vim.log.levels.WARN
-
 M.scan_dir = function(dir)
     -- Use local references for frequently accessed functions
     local uv_fs_stat = vim.uv.fs_stat
@@ -12,14 +9,14 @@ M.scan_dir = function(dir)
 
     -- Return empty on nil input
     if not dir or dir == "" then
-        notify("Invalid directory path", WARN)
+        vim.notify("Invalid directory path", vim.log.levels.WARN)
         return {}
     end
 
     -- Fast path for directory existence check
     local stat = uv_fs_stat(dir)
     if not stat or stat.type ~= "directory" then
-        notify("Directory not found or is not a directory: " .. dir, WARN)
+        vim.notify("Directory not found or is not a directory: " .. dir, vim.log.levels.WARN)
         return {}
     end
 
@@ -33,7 +30,7 @@ M.scan_dir = function(dir)
         if err then
             msg = msg .. " (" .. err .. ")"
         end
-        notify(msg, vim.log.levels.ERROR)
+        vim.notify(msg, vim.log.levels.ERROR)
         return {}
     end
 
@@ -77,26 +74,6 @@ M.scan_dir = function(dir)
     end
 
     return result
-end
-
-M.get_buffer_hash = function()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
-    local content = table.concat(lines, "\n")
-    return vim.fn.sha256(content)
-end
-
-M.goto_first_diagnostic = function(diagnostics)
-    if vim.tbl_isempty(diagnostics) then
-        return {}
-    end
-    local diag = diagnostics[1]
-    local col = diag.col
-    local lnum = diag.lnum
-    local buf_lines = vim.api.nvim_buf_line_count(0)
-    lnum = math.min(lnum, buf_lines - 1)
-    local line = vim.api.nvim_buf_get_lines(0, lnum, lnum + 1, false)[1] or ""
-    col = math.min(col, #line)
-    vim.api.nvim_win_set_cursor(0, { lnum + 1, col + 1 })
 end
 
 M.get_options_file = function(filename)

@@ -25,19 +25,9 @@ Returns:
     - error: string | nil - An error message if the function itself failed
                              (e.g., spawn error, read error, pipe error).
 ]]
-local M = {}
-
--- Use local references to frequently accessed functions for faster lookup
 local uv = vim.uv
-local is_active = uv.is_active
-local is_closing = uv.is_closing
-local close = uv.close
-local loop_alive = uv.loop_alive
-local stop = uv.stop
-local new_pipe = uv.new_pipe
-local read_start = uv.read_start
-local shutdown = uv.shutdown
-local spawn = uv.spawn
+
+local M = {}
 
 -- Pre-allocate common error messages to avoid string concatenation in hot paths
 local ERROR_MESSAGES = {
@@ -49,9 +39,9 @@ local ERROR_MESSAGES = {
 
 -- Safe handle closure with optimized check path
 local function safe_close(handle, callback)
-    if handle and is_active(handle) and not is_closing(handle) then
+    if handle and uv.is_active(handle) and not uv.is_closing(handle) then
         -- Use pcall for safety but optimize the common path
-        pcall(close, handle, callback)
+        pcall(uv.close, handle, callback)
     elseif callback then
         -- Call the callback directly if handle is already closed
         callback()
@@ -89,9 +79,9 @@ function M.execute(cmd_table)
     }
 
     -- Pre-create pipes - optimized error path for early exits
-    local stdin_pipe = new_pipe(false)
-    local stdout_pipe = new_pipe(false)
-    local stderr_pipe = new_pipe(false)
+    local stdin_pipe = uv.new_pipe(false)
+    local stdout_pipe = uv.new_pipe(false)
+    local stderr_pipe = uv.new_pipe(false)
     local process_handle
 
     -- Optimized completion check that counts pipe closures rather than using separate flags
@@ -101,8 +91,8 @@ function M.execute(cmd_table)
             -- Close process handle only after all pipes are closed
             safe_close(process_handle, function()
                 -- Stop the loop only if still running
-                if loop_alive() then
-                    stop()
+                if uv.loop_alive() then
+                    uv.stop()
                 end
             end)
         end
@@ -163,7 +153,7 @@ function M.execute(cmd_table)
 
     -- Spawn the external command
     local spawn_err
-    process_handle, spawn_err = spawn(command_path, spawn_options, on_exit)
+    process_handle, spawn_err = uv.spawn(command_path, spawn_options, on_exit)
 
     -- Optimized error handling for spawn failures
     if not process_handle then
@@ -185,18 +175,18 @@ function M.execute(cmd_table)
     end
 
     -- Start reading from stdout and stderr - use pcall for safety but optimize the normal path
-    if not pcall(read_start, stdout_pipe, on_stdout_read) then
+    if not pcall(uv.read_start, stdout_pipe, on_stdout_read) then
         status.internal_error = status.internal_error or "Failed to start reading stdout"
         safe_close(stdout_pipe, on_pipe_close)
     end
 
-    if not pcall(read_start, stderr_pipe, on_stderr_read) then
+    if not pcall(uv.read_start, stderr_pipe, on_stderr_read) then
         status.internal_error = status.internal_error or "Failed to start reading stderr"
         safe_close(stderr_pipe, on_pipe_close)
     end
 
     -- Immediately shut down stdin pipe as we don't send input
-    shutdown(stdin_pipe, function(shutdown_err)
+    uv.shutdown(stdin_pipe, function(shutdown_err)
         if shutdown_err and not status.internal_error then
             status.internal_error = "Stdin shutdown error: " .. shutdown_err.message
         end
