@@ -5,10 +5,6 @@
         "globals": [ "vim" ],
         "disable": [ "undefined-field", "missing-fields", "assign-type-mismatch" ]
     },
-    "runtime.version": "LuaJIT",
-    "workspace": {
-        "checkThirdParty": false
-    },
     "telemetry.enable": false
 }
 

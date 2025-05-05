@@ -97,7 +97,10 @@ M.init = function(config)
             local line = lines[idx]
             local colon_pos = line:find(":")
             if colon_pos and colon_pos > 1 then
-                vim.api.nvim_buf_add_highlight(buf_id, ns_id, "Keyword", idx - 1, 0, colon_pos - 1)
+                vim.api.nvim_buf_set_extmark(buf_id, ns_id, idx - 1, 0, {
+                    end_col = colon_pos - 1,
+                    hl_group = "Keyword"
+                })
             end
         end
     end

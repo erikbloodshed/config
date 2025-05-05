@@ -1,12 +1,4 @@
-local diagnostic = vim.diagnostic
-local keymap     = vim.keymap.set
-local autocmd    = vim.api.nvim_create_autocmd
-local lsp_buf    = vim.lsp.buf
-local cmd        = vim.cmd
-local setlocal   = vim.opt_local
-local severity   = diagnostic.severity
-
-autocmd({ "BufEnter" }, {
+vim.api.nvim_create_autocmd({ "BufEnter" }, {
     pattern = { "*" },
     callback = function()
         require("custom_ui.input")
@@ -18,41 +10,58 @@ autocmd({ "BufEnter" }, {
     end,
 })
 
-autocmd("Filetype", {
+vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "c", "cpp" },
-    callback = function()
-        setlocal.cinkeys:remove(":")
-        setlocal.cindent = true
+    callback = function(args)
+        vim.opt_local.cinkeys:remove(":")
+        vim.opt_local.cindent = true
+
+        local config = require("cpp-tools.config").init({
+            cpp = {
+                compiler = "g++-15",
+                compile_opts = ".compile_flags",
+            }
+        })
+
+        local build = require("cpp-tools.build").init(config)
+        local arg = { buffer = args.buf, noremap = true }
+
+        vim.keymap.set("n", "<leader>rc", function() build.compile() end, arg)
+        vim.keymap.set("n", "<leader>rr", function() build.run() end, arg)
+        vim.keymap.set("n", "<leader>ra", function() build.show_assembly() end, arg)
+        vim.keymap.set("n", "<leader>fa", function() build.add_data_file() end, arg)
+        vim.keymap.set("n", "<leader>fr", function() build.remove_data_file() end, arg)
+        vim.keymap.set({ "n", "i" }, "<F12>", function() build.get_build_info() end, arg)
     end,
 })
 
-autocmd("Filetype", {
+vim.api.nvim_create_autocmd("Filetype", {
     pattern = { "help", "qf" },
     callback = function(args)
-        keymap("n", "q", cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
+        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
     end,
 })
 
-autocmd({ "TermOpen" }, {
+vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
-        cmd.startinsert()
+        vim.cmd.startinsert()
     end,
 })
 
-autocmd("LspAttach", {
+vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
         -- Configure Neovim's built-in diagnostics
-        diagnostic.config({
+        vim.diagnostic.config({
             virtual_text = false,           -- Disable virtual text diagnostics
             severity_sort = true,           -- Sort diagnostics by severity
             float = { border = "rounded" }, -- Set rounded border for diagnostic float window
             signs = {                       -- Define custom text signs for different severity levels
                 text = {
-                    [severity.ERROR] = "",
-                    [severity.WARN] = "󱈸",
-                    [severity.HINT] = "",
-                    [severity.INFO] = "",
+                    [vim.diagnostic.severity.ERROR] = "",
+                    [vim.diagnostic.severity.WARN] = "󱈸",
+                    [vim.diagnostic.severity.HINT] = "",
+                    [vim.diagnostic.severity.INFO] = "",
                 },
             },
         })
@@ -60,12 +69,12 @@ autocmd("LspAttach", {
         require("diagnostics")
 
         local opts = { buffer = args.buf }
-        keymap("n", "<leader>ed", diagnostic.open_float, opts)
-        keymap("n", "<leader>gi", lsp_buf.implementation, opts)
-        keymap("n", "<leader>gd", lsp_buf.definition, opts)
-        keymap("n", "<leader>rn", lsp_buf.rename, opts)
-        keymap("n", "<leader>fc", function()
-            lsp_buf.format({ async = true })
+        vim.keymap.set("n", "<leader>ed", vim.diagnostic.open_float, opts)
+        vim.keymap.set("n", "<leader>gi", vim.lsp.buf.implementation, opts)
+        vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>fc", function()
+            vim.lsp.buf.format({ async = true })
         end, opts)
     end,
 })
