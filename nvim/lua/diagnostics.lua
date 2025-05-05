@@ -45,6 +45,38 @@ local function open_loclist()
     loclist_is_open = true
 end
 
+-- Toggle function for the diagnostics location list
+local function toggle_loclist()
+    -- Check if loclist is really open by querying Neovim
+    local win_id = api.nvim_get_current_win()
+    local loclist_info = vim.fn.getloclist(win_id, { winid = 0 })
+    loclist_is_open = loclist_info.winid ~= 0
+
+    if loclist_is_open then
+        -- Check if we have more than one window before trying to close
+        if #api.nvim_list_wins() > 1 then
+            cmd.lclose()
+            loclist_is_open = false
+        else
+            vim.notify("Cannot close the last window", vim.log.levels.WARN)
+        end
+    else
+        open_loclist()
+    end
+end
+
+-- Automatically close location list window when leaving a buffer
+vim.api.nvim_create_autocmd("BufLeave", {
+  callback = function()
+    -- Only close location list for normal buffers
+    if vim.bo.buftype == "" then
+      vim.cmd("lclose")
+    end
+  end,
+  group = vim.api.nvim_create_augroup("CloseLoclistOnBufferLeave", { clear = true }),
+  desc = "Close location list when leaving buffer"
+})
+
 -- Handle diagnostic changes efficiently
 autocmd("DiagnosticChanged", {
     callback = function(args)
@@ -69,26 +101,6 @@ autocmd("DiagnosticChanged", {
         update_loclist(items)
     end,
 })
-
--- Toggle function for the diagnostics location list
-local function toggle_loclist()
-    -- Check if loclist is really open by querying Neovim
-    local win_id = api.nvim_get_current_win()
-    local loclist_info = vim.fn.getloclist(win_id, { winid = 0 })
-    loclist_is_open = loclist_info.winid ~= 0
-
-    if loclist_is_open then
-        -- Check if we have more than one window before trying to close
-        if #api.nvim_list_wins() > 1 then
-            cmd.lclose()
-            loclist_is_open = false
-        else
-            vim.notify("Cannot close the last window", vim.log.levels.WARN)
-        end
-    else
-        open_loclist()
-    end
-end
 
 -- Define keymap to toggle the diagnostics location list
 keymap("n", "<leader>xx", toggle_loclist, { desc = "Toggle diagnostics location list" })
