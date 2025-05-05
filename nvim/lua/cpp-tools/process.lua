@@ -1,35 +1,27 @@
 --[[
 Optimized synchronous command execution for compilation using Neovim's libuv.
 Runs an external command with arguments, waits for it to finish,
-and captures its standard output and standard error.
+and captures its exit code and standard error.
 
-This optimized version focuses on:
-1. Reducing memory allocations and function calls
-2. Pre-allocating resources where possible
-3. Optimizing closure usage and callback patterns
-4. Streamlining error handling paths
-5. Using more efficient data structures and patterns
+This refactored version returns only the error code and stderr.
 
 Parameters:
-  cmd_and_args: table - A table containing compilation information.
+  cmd_table: table - A table containing compilation information.
                     It should have the following fields:
                     - compiler: string - The command/executable to run (e.g., 'g++', 'clang++').
                     - arg: table - A list of arguments for the command.
-                      Example: { 'your_code.cpp', '-o', 'your_program' }
-                      Example: { 'source.cpp', '-Wall', '-std=c++17' }
 
 Returns:
   table: A table containing the results:
     - code: integer | nil - The exit code of the command. Nil if terminated by signal.
                           -1 if the function itself failed (e.g., spawn error, invalid input).
-    - error: string | nil - An error message if the function itself failed
-                             (e.g., spawn error, read error, pipe error).
+    - stderr: string - The standard error output of the command (if any).
 ]]
 local uv = vim.uv
 
 local M = {}
 
--- Pre-allocate common error messages to avoid string concatenation in hot paths
+-- Pre-allocate common error messages
 local ERROR_MESSAGES = {
     invalid_cmd_table = "Invalid command format: expected a table with 'compiler' and 'arg' fields",
     invalid_compiler = "Invalid command format: 'compiler' must be a non-empty string",
@@ -37,60 +29,55 @@ local ERROR_MESSAGES = {
     not_executable = "Command not found or not executable: ",
 }
 
--- Safe handle closure with optimized check path
+-- Safe handle closure
 local function safe_close(handle, callback)
     if handle and uv.is_active(handle) and not uv.is_closing(handle) then
-        -- Use pcall for safety but optimize the common path
         pcall(uv.close, handle, callback)
     elseif callback then
-        -- Call the callback directly if handle is already closed
         callback()
     end
 end
 
--- Execute a command using libuv with optimized resource management
+-- Execute a command using libuv
 function M.execute(cmd_table)
-    -- Fast path validation for common error cases
+    -- Fast path validation
     if type(cmd_table) ~= 'table' then
-        return { error = ERROR_MESSAGES.invalid_cmd_table, code = -1 }
+        return { code = -1, stderr = ERROR_MESSAGES.invalid_cmd_table } -- Modified return
     end
 
     local command_path = cmd_table.compiler
     if type(command_path) ~= "string" or command_path == "" then
-        return { error = ERROR_MESSAGES.invalid_compiler, code = -1 }
+        return { code = -1, stderr = ERROR_MESSAGES.invalid_compiler }  -- Modified return
     end
 
     local command_args = cmd_table.arg
     if type(command_args) ~= 'table' then
-        return { error = ERROR_MESSAGES.invalid_args, code = -1 }
+        return { code = -1, stderr = ERROR_MESSAGES.invalid_args } -- Modified return
     end
 
-    -- Use vim.fn.executable through direct lookup for faster access
     if vim.fn.executable(command_path) == 0 then
-        return { error = ERROR_MESSAGES.not_executable .. command_path, code = -1 }
+        return { code = -1, stderr = ERROR_MESSAGES.not_executable .. command_path } -- Modified return
     end
 
-    -- Status tracking - use a single table to reduce closure allocations
+    -- Status tracking
     local status = {
-        pipes_closed = 0,  -- Count of closed pipes for efficient completion checking
-        exit_code = nil,   -- Process exit code
-        internal_error = nil, -- Error message if any
-        process_exited = false -- Process exit status
+        pipes_closed = 0,
+        exit_code = nil,
+        internal_error = nil, -- Still track internal errors for stderr potential
+        process_exited = false,
+        stderr_data = {}      -- Only need stderr data
     }
 
-    -- Pre-create pipes - optimized error path for early exits
+    -- Create pipes (excluding stdout)
     local stdin_pipe = uv.new_pipe(false)
-    local stdout_pipe = uv.new_pipe(false)
+    -- local stdout_pipe = uv.new_pipe(false) -- No longer needed
     local stderr_pipe = uv.new_pipe(false)
     local process_handle
 
-    -- Optimized completion check that counts pipe closures rather than using separate flags
     local function check_completion()
-        -- All done when process exited and all 3 pipes are closed (3 = stdin, stdout, stderr)
-        if status.process_exited and status.pipes_closed >= 3 then
-            -- Close process handle only after all pipes are closed
+        -- All done when process exited and relevant pipes (stdin, stderr) are closed (2 pipes)
+        if status.process_exited and status.pipes_closed >= 2 then -- Adjusted count
             safe_close(process_handle, function()
-                -- Stop the loop only if still running
                 if uv.loop_alive() then
                     uv.stop()
                 end
@@ -98,114 +85,105 @@ function M.execute(cmd_table)
         end
     end
 
-    -- Single pipe closure handler used for all pipes - reduces function allocations
     local function on_pipe_close()
         status.pipes_closed = status.pipes_closed + 1
         check_completion()
     end
 
-    -- Process exit handler with optimized pipe closure sequence
     local function on_exit(code)
         status.exit_code = code
         status.process_exited = true
 
-        -- Close all pipes efficiently
-        safe_close(stdout_pipe, on_pipe_close)
+        -- Close remaining pipes (stdin, stderr)
+        -- safe_close(stdout_pipe, on_pipe_close) -- No longer needed
         safe_close(stderr_pipe, on_pipe_close)
         safe_close(stdin_pipe, on_pipe_close)
 
-        -- Check completion state after updating flags
         check_completion()
     end
 
-    -- Single optimized read handler for both stdout/stderr - reduces closure overhead
-    local function on_pipe_read(pipe_name, err, data)
+    -- Simplified read handler only for stderr
+    local function on_stderr_read(err, data)
         if err then
-            -- Only store the first error
             if not status.internal_error then
-                status.internal_error = pipe_name .. " read error: " .. err.message
+                -- Include internal read errors in stderr for debugging
+                status.internal_error = "stderr read error: " .. err.message
             end
-            -- Close pipe on error and increment the closed counter
-            safe_close(pipe_name == "stdout" and stdout_pipe or stderr_pipe, on_pipe_close)
+            safe_close(stderr_pipe, on_pipe_close)
             return
         end
 
-        if not data then -- End of file
-            safe_close(pipe_name == "stdout" and stdout_pipe or stderr_pipe, on_pipe_close)
+        if data then
+            table.insert(status.stderr_data, data)
+        else -- End of file
+            safe_close(stderr_pipe, on_pipe_close)
         end
-        -- Ignore data - we don't need to store it
     end
 
-    -- Create specialized but optimized read handlers
-    local on_stdout_read = function(err, data)
-        on_pipe_read("stdout", err, data)
-    end
-
-    local on_stderr_read = function(err, data)
-        on_pipe_read("stderr", err, data)
-    end
-
-    -- Configure options for spawning the process - reuse the same table structure
+    -- Configure options for spawning (remove stdout pipe)
     local spawn_options = {
         args = command_args,
-        stdio = { stdin_pipe, stdout_pipe, stderr_pipe }
+        stdio = { stdin_pipe, nil, stderr_pipe } -- Pass nil for stdout
     }
 
-    -- Spawn the external command
     local spawn_err
     process_handle, spawn_err = uv.spawn(command_path, spawn_options, on_exit)
 
-    -- Optimized error handling for spawn failures
     if not process_handle then
         local error_msg = "Failed to spawn process"
         if spawn_err then
             error_msg = error_msg .. ": " .. tostring(spawn_err)
         end
-        status.internal_error = error_msg
+        status.internal_error = error_msg -- Store internal error for stderr
 
-        -- Close all pipes at once for cleanup
         safe_close(stdin_pipe)
-        safe_close(stdout_pipe)
+        -- safe_close(stdout_pipe) -- No longer needed
         safe_close(stderr_pipe)
 
         return {
-            error = status.internal_error,
-            code = -1
+            code = -1,
+            stderr = status.internal_error or "" -- Return internal error via stderr
         }
     end
 
-    -- Start reading from stdout and stderr - use pcall for safety but optimize the normal path
-    if not pcall(uv.read_start, stdout_pipe, on_stdout_read) then
-        status.internal_error = status.internal_error or "Failed to start reading stdout"
-        safe_close(stdout_pipe, on_pipe_close)
-    end
+    -- Start reading only from stderr
+    -- if not pcall(uv.read_start, stdout_pipe, on_stdout_read) then ... -- No longer needed
 
     if not pcall(uv.read_start, stderr_pipe, on_stderr_read) then
+        -- Include internal start errors in stderr
         status.internal_error = status.internal_error or "Failed to start reading stderr"
         safe_close(stderr_pipe, on_pipe_close)
     end
 
-    -- Immediately shut down stdin pipe as we don't send input
+    -- Immediately shut down stdin pipe
     uv.shutdown(stdin_pipe, function(shutdown_err)
         if shutdown_err and not status.internal_error then
+            -- Include internal shutdown errors in stderr
             status.internal_error = "Stdin shutdown error: " .. shutdown_err.message
         end
-        -- Close the stdin pipe after shutdown attempt completes
         safe_close(stdin_pipe, on_pipe_close)
     end)
 
-    -- Run the event loop once with 'default' mode for consistent behavior
+    -- Run the event loop
     uv.run('default')
 
-    -- Final guarantee to clean up any remaining handles (should rarely be needed)
-    for _, handle in ipairs({ process_handle, stdin_pipe, stdout_pipe, stderr_pipe }) do
+    -- Final cleanup (exclude stdout)
+    for _, handle in ipairs({ process_handle, stdin_pipe, stderr_pipe }) do
         safe_close(handle)
     end
 
-    -- Return only needed information
+    -- Combine stderr chunks
+    local stderr_content = table.concat(status.stderr_data)
+    -- If there was an internal error during execution, prepend it to stderr
+    if status.internal_error then
+        stderr_content = status.internal_error .. "\n" .. stderr_content
+    end
+
+
+    -- ***MODIFIED RETURN STATEMENT***
     return {
         code = status.exit_code,
-        error = status.internal_error,
+        stderr = stderr_content
     }
 end
 

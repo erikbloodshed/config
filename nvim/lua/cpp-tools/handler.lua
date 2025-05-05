@@ -14,15 +14,18 @@ M.translate = function(value, key, cmd)
         local buffer_hash = get_buffer_hash()
 
         if value[key] ~= buffer_hash then
-            local obj = require("cpp-tools.process").execute(cmd)
+            local result = require("cpp-tools.process").execute(cmd)
 
-            if obj.code == 0 then
+            if result.code == 0 then
                 value[key] = buffer_hash
-                vim.notify("Code compilation successful with exit code " .. obj.code .. ".",
+                vim.notify("Code compilation successful with exit code " .. result.code .. ".",
                     vim.log.levels.INFO)
                 return true
             else
-                vim.notify("Compilation failed: " .. obj.error .. ".", vim.log.levels.ERROR)
+                if result.stderr ~= nil then
+                    vim.notify(result.stderr, vim.log.levels.ERROR)
+                end
+
                 return false
             end
         end

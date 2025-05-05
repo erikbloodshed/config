@@ -39,7 +39,6 @@ return {
             ["<C-k>"] = { "snippet_backward", "fallback" },
         },
 
-        snippets = { preset = "luasnip" },
         appearance = { use_nvim_cmp_as_default = false },
         sources = {
             default = { "lsp", "snippets", "path" },

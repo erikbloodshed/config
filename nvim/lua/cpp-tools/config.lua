@@ -1,4 +1,3 @@
-M = {}
 
 local get_options_file = function(filename)
     if filename then
@@ -16,6 +15,8 @@ local get_options_file = function(filename)
 
     return nil
 end
+
+M = {}
 
 M.init = function(options)
     local config = {
