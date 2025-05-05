@@ -7,8 +7,6 @@
 -- Import required modules
 local handler = require("cpp-tools.handler") --  manages the execution of external processes (like compiler, runner).
 local utils = require("cpp-tools.utils")     -- contains helper functions for file operations, path manipulation, etc.
-local api = vim.api
-local notify = vim.notify
 
 -- Define the main module table 'M' which will be returned.
 local M = {}
@@ -21,8 +19,7 @@ M.init = function(config)
     local data_dir = config.data_dir_name
 
     -- TODO: Validate the config values and apply defaults where appropriate.
-
-    local src_file = api.nvim_buf_get_name(0)
+    local src_file = vim.api.nvim_buf_get_name(0)
     -- TODO: Ensure output_dir ends with a path separator to avoid invalid paths.
     local exe_file = output_dir .. vim.fn.expand("%:t:r")
     local asm_file = exe_file .. ".s"
@@ -68,7 +65,7 @@ M.init = function(config)
         if data_path then
             local files = utils.scan_dir(data_path)
             if vim.tbl_isempty(files) then
-                notify("No files found in data directory: " .. data_path, vim.log.levels.WARN)
+                vim.notify("No files found in data directory: " .. data_path, vim.log.levels.WARN)
                 return
             end
 
@@ -80,11 +77,11 @@ M.init = function(config)
             }, function(choice)
                 if choice then
                     data_file = choice
-                    notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
+                    vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
                 end
             end)
         else
-            notify("'" .. data_dir .. "' directory not found.", vim.log.levels.ERROR)
+            vim.notify("'" .. data_dir .. "' directory not found.", vim.log.levels.ERROR)
         end
     end
 
@@ -96,12 +93,12 @@ M.init = function(config)
             }, function(choice)
                 if choice == "Yes" then
                     data_file = nil
-                    notify("Data file removed.", vim.log.levels.INFO)
+                    vim.notify("Data file removed.", vim.log.levels.INFO)
                 end
             end)
             return
         end
-        notify("No data file is currently set.", vim.log.levels.WARN)
+        vim.notify("No data file is currently set.", vim.log.levels.WARN)
     end
 
     -- TODO: Add file size or compile time to info output.
@@ -118,14 +115,14 @@ M.init = function(config)
             "Date Modified    : " .. utils.get_modified_time(src_file),
         }
 
-        local ns_id = api.nvim_create_namespace("build_info_highlight")
+        local ns_id = vim.api.nvim_create_namespace("build_info_highlight")
         local buf_id = utils.open("Build Info", lines, "text")
 
         for idx = 1, #lines do
             local line = lines[idx]
             local colon_pos = line:find(":")
             if colon_pos and colon_pos > 1 then
-                api.nvim_buf_add_highlight(buf_id, ns_id, "Keyword", idx - 1, 0, colon_pos - 1)
+                vim.api.nvim_buf_add_highlight(buf_id, ns_id, "Keyword", idx - 1, 0, colon_pos - 1)
             end
         end
     end

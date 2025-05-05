@@ -57,18 +57,10 @@ autocmd("DiagnosticChanged", {
                     if #api.nvim_list_wins() > 1 then
                         cmd.lclose()
                         loclist_is_open = false
-                    elseif #api.nvim_list_wins() == 1 then
-                        cmd("bdelete")
                     end
                 end)
             end
-            return
         end
-
-        -- Get current window ID to check if loclist is visible
-        local win_id = api.nvim_get_current_win()
-        local loclist_info = vim.fn.getloclist(win_id, { winid = 0 })
-        loclist_is_open = loclist_info.winid ~= 0
 
         -- Convert diagnostics to location list items
         local items = diagnostics_to_qf_items(diagnostics)

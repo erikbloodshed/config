@@ -1,8 +1,23 @@
 M = {}
 
-M.init = function(options)
-    local utils = require("cpp-tools.utils")
+local get_options_file = function(filename)
+    if filename then
+        local path = vim.fs.find(filename, {
+            upward = true,
+            type = "file",
+            path = vim.fn.expand("%:p:h"),
+            stop = vim.fn.expand("~"),
+        })[1]
 
+        if path then
+            return { "@" .. path }
+        end
+    end
+
+    return nil
+end
+
+M.init = function(options)
     local config = {
         c = {
             compiler         = "gcc",
@@ -27,7 +42,7 @@ M.init = function(options)
     local compile_opts = config[ft].compile_opts
     local fallback = config[ft].fallback_flags
 
-    config[ft].compile_opts = compile_opts and utils.get_options_file(compile_opts) or fallback
+    config[ft].compile_opts = compile_opts and get_options_file(compile_opts) or fallback
 
     return config[ft]
 end

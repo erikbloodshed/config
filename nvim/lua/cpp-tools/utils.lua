@@ -76,23 +76,6 @@ M.scan_dir = function(dir)
     return result
 end
 
-M.get_options_file = function(filename)
-    if filename then
-        local path = vim.fs.find(filename, {
-            upward = true,
-            type = "file",
-            path = vim.fn.expand("%:p:h"),
-            stop = vim.fn.expand("~"),
-        })[1]
-
-        if path then
-            return { "@" .. path }
-        end
-    end
-
-    return nil
-end
-
 M.get_data_path = function(filename)
     if filename then
         local path = vim.fs.find(filename, {

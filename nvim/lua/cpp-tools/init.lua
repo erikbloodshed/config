@@ -1,4 +1,3 @@
-local keymap = vim.keymap.set
 local M = {}
 
 function M.setup(opts)
@@ -9,12 +8,12 @@ function M.setup(opts)
             local build = require("cpp-tools.build").init(config)
             local arg = { buffer = args.buf, noremap = true }
 
-            keymap("n", "<leader>rc", function() build.compile() end, arg)
-            keymap("n", "<leader>rr", function() build.run() end, arg)
-            keymap("n", "<leader>ra", function() build.show_assembly() end, arg)
-            keymap("n", "<leader>fa", function() build.add_data_file() end, arg)
-            keymap("n", "<leader>fr", function() build.remove_data_file() end, arg)
-            keymap({ "n", "i" }, "<F12>", function() build.get_build_info() end, arg)
+            vim.keymap.set("n", "<leader>rc", function() build.compile() end, arg)
+            vim.keymap.set("n", "<leader>rr", function() build.run() end, arg)
+            vim.keymap.set("n", "<leader>ra", function() build.show_assembly() end, arg)
+            vim.keymap.set("n", "<leader>fa", function() build.add_data_file() end, arg)
+            vim.keymap.set("n", "<leader>fr", function() build.remove_data_file() end, arg)
+            vim.keymap.set({ "n", "i" }, "<F12>", function() build.get_build_info() end, arg)
         end,
     })
 end
