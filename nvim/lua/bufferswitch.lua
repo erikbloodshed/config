@@ -1,58 +1,77 @@
--- Simple buffer switcher with tabs display
+-- BufferSwitcher: buffer switcher using NerdFont icons and temporary tabline
 local M = {}
 
+-- Timer handle for hiding the tabline
 local hide_timer = nil
 
+-- Attempt to load nvim-web-devicons for NerdFont icons
+local has_devicons, devicons = pcall(require, 'nvim-web-devicons')
+
+-- Format buffer name with NerdFont icon
 local function format_buffer_name(bufnr)
     local name = vim.fn.bufname(bufnr)
-    return name == '' and '[No Name]' or vim.fn.fnamemodify(name, ':t')
+    local display_name = vim.fn.fnamemodify(name, ':t')
+    if display_name == '' then
+        display_name = '[No Name]'
+    end
+
+    local ext = display_name:match('%.([^%.]+)$') or ''
+    local icon = ''
+    if has_devicons then
+        icon = devicons.get_icon(display_name, ext, { default = true }) or ''
+    end
+
+    return (icon ~= '' and icon .. ' ' or '') .. display_name
 end
 
-local function draw_buffer_line()
+-- Update the tabline with buffer names separated by pipes
+local function update_tabline_display()
     local buffers = vim.api.nvim_list_bufs()
-    local current_buf = vim.api.nvim_get_current_buf()
-    local line_parts = {}
+    local current = vim.api.nvim_get_current_buf()
+    local parts = {}
 
     for _, bufnr in ipairs(buffers) do
         if vim.fn.buflisted(bufnr) == 1 then
-            local buf_name = format_buffer_name(bufnr)
-            local part = ""
-            if bufnr == current_buf then
-                part = "%#TabLineSel# " .. buf_name .. " %#TabLine#"
+            local buf_label = format_buffer_name(bufnr)
+            local label = string.format(' %s ', buf_label)
+            if bufnr == current then
+                table.insert(parts, '%#TabLineSel#' .. label)
             else
-                part = "%#TabLine# " .. buf_name .. " "
+                table.insert(parts, '%#TabLine#' .. label)
             end
-            table.insert(line_parts, part)
         end
     end
 
-    vim.o.tabline = table.concat(line_parts)
+    -- Join with separator
+    vim.o.tabline = table.concat(parts, '%#TabLine#|') .. '%#TabLineFill#'
 end
 
-local function show_tabline()
-    if vim.o.showtabline ~= 2 then
-        vim.o.showtabline = 2
-        draw_buffer_line()
-    end
-end
-
-local function hide_tabline()
-    vim.schedule(function()
-        vim.o.showtabline = 0
-    end)
-end
-
+-- Show the tabline and schedule it to hide after timeout
 local function manage_tabline()
-    if hide_timer and hide_timer > 0 then
-        vim.fn.timer_stop(hide_timer)
+    if hide_timer then
+        hide_timer:stop()
+        hide_timer:close()
         hide_timer = nil
     end
 
-    show_tabline()
+    vim.o.showtabline = 2
+    update_tabline_display()
 
-    hide_timer = vim.fn.timer_start(2000, hide_tabline)
+    local timer = vim.uv.new_timer()
+    if timer then
+        hide_timer = timer
+        hide_timer:start(1500, 0, vim.schedule_wrap(function()
+            vim.o.showtabline = 0
+            if hide_timer then
+                hide_timer:stop()
+                hide_timer:close()
+                hide_timer = nil
+            end
+        end))
+    end
 end
 
+-- Navigate buffers and show tabline
 local function next_buffer()
     vim.cmd('bnext')
     manage_tabline()
@@ -63,16 +82,16 @@ local function prev_buffer()
     manage_tabline()
 end
 
+-- Setup function to initialize plugin
 function M.setup()
     vim.o.showtabline = 0
 
-    local augroup = vim.api.nvim_create_augroup("BufferSwitcher", { clear = true })
-
-    vim.api.nvim_create_autocmd({ "BufEnter", "BufAdd", "BufDelete" }, {
-        group = augroup,
+    local ag = vim.api.nvim_create_augroup('BufferSwitcher', { clear = true })
+    vim.api.nvim_create_autocmd({ 'BufEnter', 'BufAdd', 'BufDelete' }, {
+        group = ag,
         callback = function()
             if vim.o.showtabline == 2 then
-                draw_buffer_line()
+                update_tabline_display()
             end
         end,
     })
