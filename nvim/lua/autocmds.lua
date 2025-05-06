@@ -66,7 +66,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
             },
         })
 
-        require("diagnostics")
+        local diagnostics = require("diagnostics")
 
         local opts = { buffer = args.buf }
         vim.keymap.set("n", "<leader>ed", vim.diagnostic.open_float, opts)
@@ -76,5 +76,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>fc", function()
             vim.lsp.buf.format({ async = true })
         end, opts)
+        vim.keymap.set("n", "<leader>xx", diagnostics.toggle_loclist, opts)
     end,
 })

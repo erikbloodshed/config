@@ -69,31 +69,6 @@ return {
         return result
     end,
 
-    get_data_path = function(filename)
-        if filename then
-            local path = vim.fs.find(filename, {
-                upward = true,
-                type = "directory",
-                path = vim.fn.expand("%:p:h"),
-                stop = vim.fn.expand("~"),
-            })[1]
-            return path
-        end
-
-        return nil
-    end,
-
-    read_file = function(filepath)
-        local f = io.open(filepath, "r")
-
-        if not f then return nil, "Could not open file: " .. filepath end
-        local content = {}
-        for line in f:lines() do table.insert(content, line) end
-        f:close()
-
-        return content
-    end,
-
     open = function(title, lines, ft)
         local max_line_length = 0
         for _, line in ipairs(lines) do
@@ -129,5 +104,52 @@ return {
         vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf, noremap = true, nowait = true, silent = true })
 
         return buf
+    end,
+
+    get_data_path = function(filename)
+        if filename then
+            local path = vim.fs.find(filename, {
+                upward = true,
+                type = "directory",
+                path = vim.fn.expand("%:p:h"),
+                stop = vim.fn.expand("~"),
+            })[1]
+            return path
+        end
+
+        return nil
+    end,
+
+    get_date_modified = function(filepath)
+        local file_stats = vim.uv.fs_stat(filepath)
+        if file_stats then
+            return os.date("%Y-%B-%d %H:%M:%S", file_stats.mtime.sec)
+        else
+            return "Unable to retrieve file modified time."
+        end
+    end,
+
+    merged_list = function(list1, list2)
+        local list = {}
+
+        local len1 = #list1
+        for i = 1, len1 do list[i] = list1[i] end
+
+        local len2 = #list2
+        for i = 1, len2 do list[len1 + i] = list2[i] end
+
+        return list
+    end,
+
+    read_file = function(filepath)
+        local f = io.open(filepath, "r")
+
+        if not f then return nil, "Could not open file: " .. filepath end
+        local content = {}
+        for line in f:lines() do table.insert(content, line) end
+        f:close()
+
+        return content
     end
+
 }

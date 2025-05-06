@@ -1,10 +1,3 @@
--- local signs = {
---     error   = { text = '', hl = 'DiagnosticSignError' },
---     warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
---     info    = { text = '', hl = 'DiagnosticSignInfo' },
---     hint    = { text = '', hl = 'DiagnosticSignHint' },
--- }
-
 --[[
   custom_qf.lua - A custom quickfix formatter for Neovim
 
