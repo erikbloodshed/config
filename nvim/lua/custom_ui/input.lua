@@ -8,8 +8,8 @@ vim.ui.input = function(opts, on_confirm)
     local default = opts.default or ""
     on_confirm = on_confirm or function() end
 
-    local default_width = vim.str_utfindex(default) + 8
-    local prompt_width = vim.str_utfindex(prompt) + 8
+    local default_width = #default + 8
+    local prompt_width = #prompt + 8
     local input_width = math.max(default_width, prompt_width)
 
     local default_win_config = {
@@ -36,7 +36,7 @@ vim.ui.input = function(opts, on_confirm)
     api.nvim_buf_set_text(bufnr, 0, 0, 0, 0, { default })
 
     vim.cmd("startinsert")
-    api.nvim_win_set_cursor(0, { 1, vim.str_utfindex(default) + 1 })
+    api.nvim_win_set_cursor(0, { 1, #default + 1 })
 
     keymap({ "n", "i", "v" }, "<cr>", function()
         on_confirm(api.nvim_buf_get_lines(bufnr, 0, 1, false)[1])
