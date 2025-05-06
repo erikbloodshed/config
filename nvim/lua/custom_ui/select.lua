@@ -28,7 +28,7 @@ end
 
 local function pick(opts)
     local lines = {}
-    local max_width = string.len(opts.title)
+    local max_width = #opts.title
     for _, item in ipairs(opts.items) do
         local line = item.text or tostring(item)
         table.insert(lines, line)

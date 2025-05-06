@@ -1,12 +1,17 @@
 vim.api.nvim_create_autocmd({ "BufEnter" }, {
     pattern = { "*" },
     callback = function()
+        require("bufferswitch").setup()
         require("custom_ui.input")
         require("custom_ui.select")
         require("custom_ui.qf").setup({
             show_multiple_lines = false,
             max_filename_length = 30,
         })
+
+        -- local arg = { buffer = args.buf, noremap = true }
+        -- vim.keymap.set("n", "<Left>", function() vim.cmd("bprev") end, arg)
+        -- vim.keymap.set("n", "<Right>", function() vim.cmd("bnext") end, arg)
     end,
 })
 
