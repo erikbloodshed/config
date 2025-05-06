@@ -1,375 +1,133 @@
---[[
-  custom_qf.lua - A custom quickfix formatter for Neovim
-
-  This module improves the appearance of quickfix and location list windows by:
-  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
-  2. Highlighting file paths using the Directory highlight group
-  3. Highlighting line/column numbers using the Number highlight group
-  4. Highlighting diagnostic messages with the same highlight as their signs
-  5. Supporting path truncation for long file paths
-  6. Making annotations like "(fix available)" appear in italic
---]]
-
 local api = vim.api
-local fn = vim.fn
+local keymap = vim.keymap.set
 
-local M = {}
+api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
 
--- Define the sign symbols and their highlight groups for different diagnostic types
-local signs = {
-    error   = { text = '', hl = 'DiagnosticSignError' },
-    warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
-    info    = { text = '', hl = 'DiagnosticSignInfo' },
-    hint    = { text = '', hl = 'DiagnosticSignHint' },
-}
-
--- Create a unique namespace for our buffer highlights
-local namespace = api.nvim_create_namespace('custom_qf')
--- Configuration settings with defaults
-local show_multiple_lines = false      -- Whether to show multi-line messages
-local max_filename_length = 0          -- Maximum length for filenames (0 = no limit)
-local filename_truncate_prefix = '...' -- Prefix to show when truncating
-
--- Pads a string with spaces to reach the desired width
--- @param string The string to pad
--- @param pad_to The total width to pad to
--- @return The padded string
-local function pad_right(string, pad_to)
-    local new = string
-
-    if pad_to == 0 then
-        return string
+local function close_picker(picker)
+    if api.nvim_win_is_valid(picker.win) then
+        api.nvim_win_close(picker.win, true)
     end
-
-    for _ = fn.strwidth(string), pad_to do
-        new = new .. ' '
-    end
-
-    return new
-end
-
--- Truncates a file path if it exceeds the maximum length
--- @param path The file path to potentially truncate
--- @return The (possibly) truncated path
-local function trim_path(path)
-    -- Convert to relative path
-    local fname = fn.fnamemodify(path, ':p:.')
-    local len = fn.strchars(fname)
-
-    -- Truncate if configured maximum length is exceeded
-    if max_filename_length > 0 and len > max_filename_length then
-        fname = filename_truncate_prefix
-            .. fn.strpart(fname, len - max_filename_length, max_filename_length, 1)
-    end
-
-    return fname
-end
-
--- Gets either quickfix or location list items based on info
--- @param info The quickfix formatting info from Neovim
--- @return Table containing the list items and buffer number
-local function list_items(info)
-    if info.quickfix == 1 then
-        return fn.getqflist({ id = info.id, items = 1, qfbufnr = 1 })
-    else
-        return fn.getloclist(info.winid, { id = info.id, items = 1, qfbufnr = 1 })
+    if api.nvim_buf_is_valid(picker.buf) then
+        api.nvim_buf_delete(picker.buf, { force = true })
     end
 end
 
--- Applies all collected highlights to the buffer using extmarks
--- @param bufnr The buffer to apply highlights to
--- @param highlights Table of highlight definitions to apply
-local function apply_highlights(bufnr, highlights)
-    for _, hl in ipairs(highlights) do
-        api.nvim_buf_set_extmark(
-            bufnr,
-            namespace,
-            hl.line,
-            hl.col,
-            {
-                end_col = hl.end_col,
-                hl_group = hl.group,
-                priority = 100,  -- Set appropriate priority
-            }
-        )
-    end
+local function update_highlight(picker)
+    api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
+    api.nvim_buf_set_extmark(picker.buf, picker.ns, picker.selected - 1, 0, {
+        line_hl_group = "CustomPickerSelection",
+        end_col = 0,
+        priority = 100
+    })
 end
 
--- Main formatting function called by Neovim's quickfixtextfunc
--- @param info Table containing formatting information from Neovim
--- @return Table of formatted strings for each quickfix/location list item
-function M.format(info)
-    -- Get the list items and buffer number
-    local list = list_items(info)
-    local qf_bufnr = list.qfbufnr
-    local raw_items = list.items
+local function move_picker(picker, delta)
+    local count = #picker.items
+    local new_idx = (picker.selected - 1 + delta) % count + 1
+    picker.selected = new_idx
+    api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
+    update_highlight(picker)
+end
+
+local function pick(opts)
     local lines = {}
-    local pad_to = 0 -- For aligning text across all lines
-
-    -- Map single-letter type codes to our sign configurations
-    local type_mapping = {
-        E = signs.error,   -- Error
-        W = signs.warning, -- Warning
-        I = signs.info,    -- Information
-        N = signs.hint,    -- Note/Hint
-    }
-
-    local items = {}
-    local show_sign = false -- Will be set to true if any item has a valid type
-
-    -- Clear existing highlights when creating a new list
-    if info.start_idx == 1 then
-        api.nvim_buf_clear_namespace(qf_bufnr, namespace, 0, -1)
-    end
-
-    -- First pass: collect and process all items
-    for i = info.start_idx, info.end_idx do
-        local raw = raw_items[i]
-
-        if raw then
-            -- Create a processed item with all the information we need
-            local item = {
-                type = raw.type,   -- Diagnostic type (E/W/I/N)
-                text = raw.text,   -- Message text
-                location = '',     -- File path + line/col (to be built)
-                path_size = 0,     -- Length of just the file path part
-                line_col_size = 0, -- Length of just the line/col part
-                index = i,         -- Original index for positioning
-            }
-
-            -- Check if this item has a valid diagnostic type
-            if type_mapping[item.type] then
-                show_sign = true
-            end
-
-            -- Add file path to location if available
-            if raw.bufnr > 0 then
-                item.location = trim_path(fn.bufname(raw.bufnr))
-                item.path_size = #item.location
-            end
-
-            -- Add line and column numbers to location if available
-            if raw.lnum and raw.lnum > 0 then
-                local lnum = raw.lnum
-
-                -- Handle multi-line spans
-                if raw.end_lnum and raw.end_lnum > 0 and raw.end_lnum ~= lnum then
-                    lnum = lnum .. '-' .. raw.end_lnum
-                end
-
-                -- Append line number to location
-                if #item.location > 0 then
-                    item.location = item.location .. ' ' .. lnum
-                else
-                    item.location = tostring(lnum)
-                end
-
-                -- Add column information if available
-                if raw.col and raw.col > 0 then
-                    local col = raw.col
-
-                    -- Handle multi-column spans
-                    if raw.end_col and raw.end_col > 0 and raw.end_col ~= col then
-                        col = col .. '-' .. raw.end_col
-                    end
-
-                    item.location = item.location .. ':' .. col
-                end
-
-                -- Calculate the size of just the line/col part
-                item.line_col_size = #item.location - item.path_size
-            end
-
-            -- Track the maximum location width for alignment
-            local size = fn.strwidth(item.location)
-            if size > pad_to then
-                pad_to = size
-            end
-
-            table.insert(items, item)
-        end
-    end
-
-    -- Collection for our highlight specifications
-    local highlights = {}
-
-    -- Second pass: format items and collect highlights
-    for _, item in ipairs(items) do
-        local line_idx = item.index - 1 -- 0-indexed for buffer operations
-
-        -- Get just the first line of the message by default
-        -- (Quickfix window doesn't handle newlines well)
-        local text = vim.split(item.text, '\n')[1]
-        local location = item.location
-
-        -- Alternative: join multiple lines with spaces if enabled
-        if show_multiple_lines then
-            text = fn.substitute(item.text, '\n\\s*', ' ', 'g')
-        end
-
-        -- Trim whitespace from the message text
-        text = fn.trim(text)
-
-        -- Only pad the location if there's actually text to show
-        if text ~= '' then
-            location = pad_right(location, pad_to)
-        end
-
-        -- Get the sign configuration for this item type
-        local sign_conf = type_mapping[item.type]
-        local sign = ' ' -- Default to space if no type or unknown type
-        local sign_hl = nil
-
-        if sign_conf then
-            sign = sign_conf.text
-            sign_hl = sign_conf.hl
-        end
-
-        -- Build the complete line: sign + location + message
-        local prefix = show_sign and sign .. ' ' or ''
-        local line = prefix .. location .. text
-
-        -- Workaround for empty lines (prevents Vim's default "|| " formatting)
-        if line == '' then
-            line = ' '
-        end
-
-        -- Add highlight for the sign if available
-        if show_sign and sign_hl then
-            table.insert(
-                highlights,
-                { group = sign_hl, line = line_idx, col = 0, end_col = #sign }
-            )
-
-            -- Highlight the message text with the same highlight group as the sign
-            -- This is the key feature that makes messages match their signs
-            if text ~= '' then
-                local text_start = #prefix + #location
-                table.insert(
-                    highlights,
-                    { group = sign_hl, line = line_idx, col = text_start, end_col = #line }
-                )
-            end
-        end
-
-        -- Highlight the file path with Directory highlight group
-        if item.path_size > 0 then
-            table.insert(highlights, {
-                group = 'Directory',
-                line = line_idx,
-                col = #prefix,
-                end_col = #prefix + item.path_size,
-            })
-        end
-
-        -- Highlight line/column numbers with Number highlight group
-        if item.line_col_size > 0 then
-            local col_start = #prefix + item.path_size
-
-            table.insert(highlights, {
-                group = 'Number',
-                line = line_idx,
-                col = col_start,
-                end_col = col_start + item.line_col_size,
-            })
-        end
-
-        -- Check for and highlight phrases like "(fix available)" with italic
-        local fix_annotation_start = text:find("%([^)]*fix[^)]*%)")
-
-        if fix_annotation_start then
-            local fix_annotation_end = text:find("%)", fix_annotation_start)
-            if fix_annotation_end then
-                local text_start = #prefix + #location
-                table.insert(highlights, {
-                    group = 'Comment', -- Comment group typically uses italic formatting
-                    line = line_idx,
-                    col = text_start + fix_annotation_start - 1,
-                    end_col = text_start + fix_annotation_end,
-                })
-            end
-        end
-
-        -- Add the formatted line to our result list
+    local max_width = string.len(opts.title)
+    for _, item in ipairs(opts.items) do
+        local line = item.text or tostring(item)
         table.insert(lines, line)
     end
 
-    -- Schedule highlights to be applied after the quickfix window is populated
-    -- (immediate application won't work as the lines aren't in the buffer yet)
-    vim.schedule(function()
-        apply_highlights(qf_bufnr, highlights)
-    end)
+    local padding = 4
+    local width = math.min(max_width + padding, vim.o.columns - 4)
+    local height = math.min(#lines, 10)
+    local row = math.floor((vim.o.lines - height) / 2)
+    local col = math.floor((vim.o.columns - width) / 2)
 
-    -- Return formatted lines for Neovim to display
-    return lines
-end
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
--- Create a custom highlight group for annotations (if user wants custom styling)
-local function create_highlight_groups()
-    -- Check if our custom highlight group already exists
-    local exists = pcall(function() return api.nvim_get_hl(0, { name = 'QfAnnotation' }) end)
+    local win = api.nvim_open_win(buf, true, {
+        relative = "editor",
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        border = "rounded",
+        style = "minimal",
+        title = opts.title or "Select",
+        title_pos = "center"
+    })
 
-    if not exists then
-        -- Create a custom highlight group for annotations that links to Comment
-        -- The Comment highlight group typically uses italic formatting
-        api.nvim_set_hl(0, 'QfAnnotation', { link = 'Comment' })
+    local picker = {
+        buf = buf,
+        win = win,
+        ns = api.nvim_create_namespace("custom_picker"),
+        items = opts.items,
+        selected = 1,
+        actions = opts.actions or {},
+        on_close = opts.on_close or function() end,
+    }
+
+    update_highlight(picker)
+    api.nvim_win_set_cursor(win, { 1, 0 })
+
+    keymap("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
+    keymap("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
+
+    keymap("n", "<CR>", function()
+        if picker.actions.confirm then
+            picker.actions.confirm(picker, picker.items[picker.selected])
+        else
+            close_picker(picker)
+        end
+    end, { buffer = buf })
+
+    local function cancel()
+        close_picker(picker)
+        picker.on_close()
     end
+
+    keymap("n", "q", cancel, { buffer = buf })
+    keymap("n", "<Esc>", cancel, { buffer = buf })
+
+    return picker
 end
 
--- Initialize the module with user configuration
--- @param opts Table of configuration options:
---   - signs: Table of custom sign configurations
---   - show_multiple_lines: Boolean to enable multi-line messages
---   - max_filename_length: Number for max filename length (0 = no limit)
---   - filename_truncate_prefix: String prefix for truncated filenames
-function M.setup(opts)
+vim.ui.select = function(items, opts, on_choice)
     opts = opts or {}
 
-    -- Override default signs with user-provided ones
-    if opts.signs then
-        assert(type(opts.signs) == 'table', 'the "signs" option must be a table')
-        signs = vim.tbl_deep_extend('force', signs, opts.signs)
+    local formatted_items = {}
+
+    for idx, item in ipairs(items) do
+        local text = (opts.format_item and opts.format_item(item)) or tostring(item)
+        table.insert(formatted_items, {
+            text = text,
+            item = item,
+            idx = idx,
+        })
     end
 
-    -- Enable showing multiple lines joined with spaces
-    if opts.show_multiple_lines then
-        show_multiple_lines = true
-    end
+    local completed = false
 
-    -- Set maximum filename length for truncation
-    if opts.max_filename_length then
-        max_filename_length = opts.max_filename_length
-        assert(
-            type(max_filename_length) == 'number',
-            'the "max_filename_length" option must be a number'
-        )
-    end
-
-    -- Set the prefix to show when filenames are truncated
-    if opts.filename_truncate_prefix then
-        filename_truncate_prefix = opts.filename_truncate_prefix
-        assert(
-            type(filename_truncate_prefix) == 'string',
-            'the "filename_truncate_prefix" option must be a string'
-        )
-    end
-
-    -- Create our custom highlight groups
-    create_highlight_groups()
-
-    -- Register our format function with Neovim using Lua API
-    vim.opt.quickfixtextfunc = "v:lua.require'custom_ui.qf'.format"
+    pick({
+        title = opts.prompt or "Select",
+        items = formatted_items,
+        actions = {
+            confirm = function(picker, picked)
+                if completed then return end
+                completed = true
+                close_picker(picker)
+                vim.schedule(function()
+                    on_choice(picked.item, picked.idx)
+                end)
+            end,
+        },
+        on_close = function()
+            if completed then return end
+            completed = true
+            vim.schedule(function()
+                on_choice(nil, nil)
+            end)
+        end,
+    })
 end
-
--- Example usage:
--- require('custom_qf').setup({
---   signs = {
---     error = { text = '✘', hl = 'DiagnosticSignError' },
---     warning = { text = '▲', hl = 'DiagnosticSignWarn' },
---   },
---   show_multiple_lines = true,
---   max_filename_length = 40,
---   filename_truncate_prefix = '...',
--- })
-
-return M

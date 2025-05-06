@@ -1,8 +1,15 @@
+-- local signs = {
+--     error   = { text = '', hl = 'DiagnosticSignError' },
+--     warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
+--     info    = { text = '', hl = 'DiagnosticSignInfo' },
+--     hint    = { text = '', hl = 'DiagnosticSignHint' },
+-- }
+
 --[[
   custom_qf.lua - A custom quickfix formatter for Neovim
 
   This module improves the appearance of quickfix and location list windows by:
-  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
+  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
   2. Highlighting file paths using the Directory highlight group
   3. Highlighting line/column numbers using the Number highlight group
   4. Highlighting diagnostic messages with the same highlight as their signs
@@ -16,6 +23,7 @@ local fn = vim.fn
 local M = {}
 
 -- Define the sign symbols and their highlight groups for different diagnostic types
+
 local signs = {
     error   = { text = '', hl = 'DiagnosticSignError' },
     warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
@@ -76,17 +84,21 @@ local function list_items(info)
     end
 end
 
--- Applies all collected highlights to the buffer
+-- Applies all collected highlights to the buffer using extmarks
 -- @param bufnr The buffer to apply highlights to
 -- @param highlights Table of highlight definitions to apply
 local function apply_highlights(bufnr, highlights)
     for _, hl in ipairs(highlights) do
-        vim.highlight.range(
+        api.nvim_buf_set_extmark(
             bufnr,
             namespace,
-            hl.group,
-            { hl.line, hl.col },
-            { hl.line, hl.end_col }
+            hl.line,
+            hl.col,
+            {
+                end_col = hl.end_col,
+                hl_group = hl.group,
+                priority = 100,  -- Set appropriate priority
+            }
         )
     end
 end
@@ -271,8 +283,6 @@ function M.format(info)
         end
 
         -- Check for and highlight phrases like "(fix available)" with italic
-        -- local fix_annotation_start = text:find("%([^%)]+%)") -- Find text in parentheses
-        -- local fix_annotation_start = text:find("%(fix available%)") -- Find text in parentheses
         local fix_annotation_start = text:find("%([^)]*fix[^)]*%)")
 
         if fix_annotation_start then
@@ -305,12 +315,12 @@ end
 -- Create a custom highlight group for annotations (if user wants custom styling)
 local function create_highlight_groups()
     -- Check if our custom highlight group already exists
-    local exists = pcall(api.nvim_get_hl_by_name, 'QfAnnotation', true)
+    local exists = pcall(function() return api.nvim_get_hl(0, { name = 'QfAnnotation' }) end)
 
     if not exists then
         -- Create a custom highlight group for annotations that links to Comment
         -- The Comment highlight group typically uses italic formatting
-        vim.cmd('highlight default link QfAnnotation Comment')
+        api.nvim_set_hl(0, 'QfAnnotation', { link = 'Comment' })
     end
 end
 
@@ -355,7 +365,7 @@ function M.setup(opts)
     -- Create our custom highlight groups
     create_highlight_groups()
 
-    -- Register our format function with Neovim
+    -- Register our format function with Neovim using Lua API
     vim.opt.quickfixtextfunc = "v:lua.require'custom_ui.qf'.format"
 end
 
