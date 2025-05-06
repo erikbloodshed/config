@@ -3,6 +3,27 @@ local utils = require("cpp-tools.utils")
 
 local M = {}
 
+local function get_date_modified(filepath)
+    local file_stats = vim.uv.fs_stat(filepath)
+    if file_stats then
+        return os.date("%Y-%B-%d %H:%M:%S", file_stats.mtime.sec)
+    else
+        return "Unable to retrieve file modified time."
+    end
+end
+
+local function merged_list(list1, list2)
+    local list = {}
+
+    local len1 = #list1
+    for i = 1, len1 do list[i] = list1[i] end
+
+    local len2 = #list2
+    for i = 1, len2 do list[len1 + i] = list2[i] end
+
+    return list
+end
+
 M.init = function(config)
     local compiler = config.compiler
     local flags = config.compile_opts
@@ -16,8 +37,9 @@ M.init = function(config)
     local data_path = utils.get_data_path(data_dir)
     local hash = { compile = nil, assemble = nil }
     local data_file = nil
-    local compile_args = utils.merged_list(flags, { "-o", exe_file, src_file })
-    local assemble_args = utils.merged_list(flags, { "-S", "-o", asm_file, src_file })
+
+    local compile_args = merged_list(flags, { "-o", exe_file, src_file })
+    local assemble_args = merged_list(flags, { "-S", "-o", asm_file, src_file })
 
     local compile_command = { compiler = compiler, arg = compile_args }
     local assemble_command = { compiler = compiler, arg = assemble_args }
@@ -87,7 +109,7 @@ M.init = function(config)
             "Output Directory : " .. output_dir,
             "Data Directory   : " .. (data_path or "Not Found"),
             "Data File In Use : " .. (data_file and vim.fn.fnamemodify(data_file, ':t') or "None"),
-            "Date Modified    : " .. utils.get_modified_time(src_file),
+            "Date Modified    : " .. get_date_modified(src_file),
         }
 
         local ns_id = vim.api.nvim_create_namespace("build_info_highlight")

@@ -1,6 +1,7 @@
 local api = vim.api
 local keymap = vim.keymap.set
 
+---@diagnostic disable: duplicate-set-field
 vim.ui.input = function(opts, on_confirm)
     opts = opts or {}
 

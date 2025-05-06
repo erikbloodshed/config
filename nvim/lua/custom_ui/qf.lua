@@ -9,16 +9,13 @@
   custom_qf.lua - A custom quickfix formatter for Neovim
 
   This module improves the appearance of quickfix and location list windows by:
-  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
+  1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
   2. Highlighting file paths using the Directory highlight group
   3. Highlighting line/column numbers using the Number highlight group
   4. Highlighting diagnostic messages with the same highlight as their signs
   5. Supporting path truncation for long file paths
   6. Making annotations like "(fix available)" appear in italic
 --]]
-
-local api = vim.api
-local fn = vim.fn
 
 local M = {}
 
@@ -32,7 +29,7 @@ local signs = {
 }
 
 -- Create a unique namespace for our buffer highlights
-local namespace = api.nvim_create_namespace('custom_qf')
+local namespace = vim.api.nvim_create_namespace('custom_qf')
 -- Configuration settings with defaults
 local show_multiple_lines = false      -- Whether to show multi-line messages
 local max_filename_length = 0          -- Maximum length for filenames (0 = no limit)
@@ -49,7 +46,7 @@ local function pad_right(string, pad_to)
         return string
     end
 
-    for _ = fn.strwidth(string), pad_to do
+    for _ = vim.fn.strwidth(string), pad_to do
         new = new .. ' '
     end
 
@@ -61,13 +58,13 @@ end
 -- @return The (possibly) truncated path
 local function trim_path(path)
     -- Convert to relative path
-    local fname = fn.fnamemodify(path, ':p:.')
-    local len = fn.strchars(fname)
+    local fname = vim.fn.fnamemodify(path, ':p:.')
+    local len = vim.fn.strchars(fname)
 
     -- Truncate if configured maximum length is exceeded
     if max_filename_length > 0 and len > max_filename_length then
         fname = filename_truncate_prefix
-            .. fn.strpart(fname, len - max_filename_length, max_filename_length, 1)
+            .. vim.fn.strpart(fname, len - max_filename_length, max_filename_length, 1)
     end
 
     return fname
@@ -78,9 +75,9 @@ end
 -- @return Table containing the list items and buffer number
 local function list_items(info)
     if info.quickfix == 1 then
-        return fn.getqflist({ id = info.id, items = 1, qfbufnr = 1 })
+        return vim.fn.getqflist({ id = info.id, items = 1, qfbufnr = 1 })
     else
-        return fn.getloclist(info.winid, { id = info.id, items = 1, qfbufnr = 1 })
+        return vim.fn.getloclist(info.winid, { id = info.id, items = 1, qfbufnr = 1 })
     end
 end
 
@@ -89,7 +86,7 @@ end
 -- @param highlights Table of highlight definitions to apply
 local function apply_highlights(bufnr, highlights)
     for _, hl in ipairs(highlights) do
-        api.nvim_buf_set_extmark(
+        vim.api.nvim_buf_set_extmark(
             bufnr,
             namespace,
             hl.line,
@@ -127,7 +124,7 @@ function M.format(info)
 
     -- Clear existing highlights when creating a new list
     if info.start_idx == 1 then
-        api.nvim_buf_clear_namespace(qf_bufnr, namespace, 0, -1)
+        vim.api.nvim_buf_clear_namespace(qf_bufnr, namespace, 0, -1)
     end
 
     -- First pass: collect and process all items
@@ -152,7 +149,7 @@ function M.format(info)
 
             -- Add file path to location if available
             if raw.bufnr > 0 then
-                item.location = trim_path(fn.bufname(raw.bufnr))
+                item.location = trim_path(vim.fn.bufname(raw.bufnr))
                 item.path_size = #item.location
             end
 
@@ -189,7 +186,7 @@ function M.format(info)
             end
 
             -- Track the maximum location width for alignment
-            local size = fn.strwidth(item.location)
+            local size = vim.fn.strwidth(item.location)
             if size > pad_to then
                 pad_to = size
             end
@@ -212,11 +209,11 @@ function M.format(info)
 
         -- Alternative: join multiple lines with spaces if enabled
         if show_multiple_lines then
-            text = fn.substitute(item.text, '\n\\s*', ' ', 'g')
+            text = vim.fn.substitute(item.text, '\n\\s*', ' ', 'g')
         end
 
         -- Trim whitespace from the message text
-        text = fn.trim(text)
+        text = vim.fn.trim(text)
 
         -- Only pad the location if there's actually text to show
         if text ~= '' then
@@ -315,12 +312,12 @@ end
 -- Create a custom highlight group for annotations (if user wants custom styling)
 local function create_highlight_groups()
     -- Check if our custom highlight group already exists
-    local exists = pcall(function() return api.nvim_get_hl(0, { name = 'QfAnnotation' }) end)
+    local exists = pcall(function() return vim.api.nvim_get_hl(0, { name = 'QfAnnotation' }) end)
 
     if not exists then
         -- Create a custom highlight group for annotations that links to Comment
         -- The Comment highlight group typically uses italic formatting
-        api.nvim_set_hl(0, 'QfAnnotation', { link = 'Comment' })
+        vim.api.nvim_set_hl(0, 'QfAnnotation', { link = 'Comment' })
     end
 end
 

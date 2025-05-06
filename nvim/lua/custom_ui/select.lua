@@ -1,20 +1,17 @@
-local api = vim.api
-local keymap = vim.keymap.set
-
-api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
+vim.api.nvim_set_hl(0, "CustomPickerSelection", { link = "Visual" })
 
 local function close_picker(picker)
-    if api.nvim_win_is_valid(picker.win) then
-        api.nvim_win_close(picker.win, true)
+    if vim.api.nvim_win_is_valid(picker.win) then
+        vim.api.nvim_win_close(picker.win, true)
     end
-    if api.nvim_buf_is_valid(picker.buf) then
-        api.nvim_buf_delete(picker.buf, { force = true })
+    if vim.api.nvim_buf_is_valid(picker.buf) then
+        vim.api.nvim_buf_delete(picker.buf, { force = true })
     end
 end
 
 local function update_highlight(picker)
-    api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
-    api.nvim_buf_set_extmark(picker.buf, picker.ns, picker.selected - 1, 0, {
+    vim.api.nvim_buf_clear_namespace(picker.buf, picker.ns, 0, -1)
+    vim.api.nvim_buf_set_extmark(picker.buf, picker.ns, picker.selected - 1, 0, {
         line_hl_group = "CustomPickerSelection",
         end_col = 0,
         priority = 100
@@ -25,7 +22,7 @@ local function move_picker(picker, delta)
     local count = #picker.items
     local new_idx = (picker.selected - 1 + delta) % count + 1
     picker.selected = new_idx
-    api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
+    vim.api.nvim_win_set_cursor(picker.win, { new_idx, 0 })
     update_highlight(picker)
 end
 
@@ -43,10 +40,10 @@ local function pick(opts)
     local row = math.floor((vim.o.lines - height) / 2)
     local col = math.floor((vim.o.columns - width) / 2)
 
-    local buf = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-    local win = api.nvim_open_win(buf, true, {
+    local win = vim.api.nvim_open_win(buf, true, {
         relative = "editor",
         width = width,
         height = height,
@@ -61,7 +58,7 @@ local function pick(opts)
     local picker = {
         buf = buf,
         win = win,
-        ns = api.nvim_create_namespace("custom_picker"),
+        ns = vim.api.nvim_create_namespace("custom_picker"),
         items = opts.items,
         selected = 1,
         actions = opts.actions or {},
@@ -69,12 +66,12 @@ local function pick(opts)
     }
 
     update_highlight(picker)
-    api.nvim_win_set_cursor(win, { 1, 0 })
+    vim.api.nvim_win_set_cursor(win, { 1, 0 })
 
-    keymap("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
-    keymap("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "j", function() move_picker(picker, 1) end, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "k", function() move_picker(picker, -1) end, { buffer = buf, nowait = true })
 
-    keymap("n", "<CR>", function()
+    vim.keymap.set("n", "<CR>", function()
         if picker.actions.confirm then
             picker.actions.confirm(picker, picker.items[picker.selected])
         else
@@ -87,12 +84,13 @@ local function pick(opts)
         picker.on_close()
     end
 
-    keymap("n", "q", cancel, { buffer = buf })
-    keymap("n", "<Esc>", cancel, { buffer = buf })
+    vim.keymap.set("n", "q", cancel, { buffer = buf })
+    vim.keymap.set("n", "<Esc>", cancel, { buffer = buf })
 
     return picker
 end
 
+---@diagnostic disable: duplicate-set-field
 vim.ui.select = function(items, opts, on_choice)
     opts = opts or {}
 
