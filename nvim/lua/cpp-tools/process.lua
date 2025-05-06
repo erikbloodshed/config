@@ -47,7 +47,7 @@ function M.execute(cmd_table)
 
     local command_path = cmd_table.compiler
     if type(command_path) ~= "string" or command_path == "" then
-        return { code = -1, stderr = ERROR_MESSAGES.invalid_compiler }  -- Modified return
+        return { code = -1, stderr = ERROR_MESSAGES.invalid_compiler } -- Modified return
     end
 
     local command_args = cmd_table.arg
@@ -155,13 +155,14 @@ function M.execute(cmd_table)
         safe_close(stderr_pipe, on_pipe_close)
     end
 
-    -- Immediately shut down stdin pipe
-    uv.shutdown(stdin_pipe, function(shutdown_err)
-        if shutdown_err and not status.internal_error then
-            -- Include internal shutdown errors in stderr
-            status.internal_error = "Stdin shutdown error: " .. shutdown_err.message
+    -- FIX: Close stdin pipe directly rather than using shutdown
+    -- This avoids the type mismatch warning
+    safe_close(stdin_pipe, function(close_err)
+        if close_err and not status.internal_error then
+            -- Include internal close errors in stderr
+            status.internal_error = "Stdin close error: " .. tostring(close_err)
         end
-        safe_close(stdin_pipe, on_pipe_close)
+        on_pipe_close() -- Call this manually since we're not using the safe_close wrapper
     end)
 
     -- Run the event loop
@@ -179,8 +180,6 @@ function M.execute(cmd_table)
         stderr_content = status.internal_error .. "\n" .. stderr_content
     end
 
-
-    -- ***MODIFIED RETURN STATEMENT***
     return {
         code = status.exit_code,
         stderr = stderr_content
