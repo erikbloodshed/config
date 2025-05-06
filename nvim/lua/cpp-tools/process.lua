@@ -37,7 +37,7 @@ local function safe_close(handle, callback)
 end
 
 -- Execute a command using libuv
-M = {
+local M = {
     execute = function(cmd_table)
         -- Fast path validation
         if type(cmd_table) ~= 'table' then
@@ -64,7 +64,7 @@ M = {
             exit_code = nil,
             internal_error = nil, -- Still track internal errors for stderr potential
             process_exited = false,
-            stderr_data = {}  -- Only need stderr data
+            stderr_data = {}      -- Only need stderr data
         }
 
         -- Create pipes (excluding stdout)
@@ -180,3 +180,5 @@ M = {
         }
     end
 }
+
+return M

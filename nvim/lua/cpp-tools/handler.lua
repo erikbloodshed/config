@@ -4,7 +4,7 @@ local get_buffer_hash = function()
     return vim.fn.sha256(content)
 end
 
-M = {
+local M = {
     translate = function(value, key, cmd)
         local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
 
