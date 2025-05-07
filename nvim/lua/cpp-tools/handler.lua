@@ -33,7 +33,7 @@ local M = {
             return true
         end
 
-        require("diagnostics").open_loclist()
+        require("diagnostics").open_quickfixlist()
         return false
     end,
 

@@ -78,18 +78,55 @@ end
 -- @param bufnr The buffer to apply highlights to
 -- @param highlights Table of highlight definitions to apply
 local function apply_highlights(bufnr, highlights)
+    -- Check if the buffer is still valid before proceeding
+    -- This helps if the quickfix buffer is closed unexpectedly
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+        -- print("Warning: Quickfix buffer invalidated before applying highlights")
+        return -- Exit the function if the buffer is not valid
+    end
+
     for _, hl in ipairs(highlights) do
+        -- Add a check to ensure 'hl' is not nil and has required fields
+        if hl == nil or type(hl) ~= 'table' or hl.line == nil or hl.col == nil or hl.end_col == nil or hl.group == nil then
+            -- Optionally log a warning or skip this iteration
+            -- print("Warning: Skipping invalid or incomplete highlight entry:", hl)
+            goto continue -- Skip if hl is nil, not a table, or missing essential fields
+        end
+
+        -- Add validation for end_col and line existence
+        local line_length = 0
+        -- Safely get the line content to determine length
+        local lines = vim.api.nvim_buf_get_lines(bufnr, hl.line, hl.line + 1, false)
+
+        if #lines > 0 then
+            line_length = lines[1]:len()
+        else
+            -- The line no longer exists or is out of bounds by the time
+            -- apply_highlights is executed.
+            -- print("Warning: Skipping highlight for non-existent line:", hl.line)
+            goto continue -- Skip this highlight if the line is gone
+        end
+
+        local end_col = hl.end_col
+        -- Validate end_col against line length and start column
+        if end_col < hl.col or end_col > line_length then
+            -- print("Warning: Invalid end_col value for highlight:", hl)
+            goto continue -- Skip if end_col is invalid
+        end
+
+        -- All checks passed, apply the extmark
         vim.api.nvim_buf_set_extmark(
             bufnr,
             namespace,
             hl.line,
             hl.col,
             {
-                end_col = hl.end_col,
+                end_col = end_col,
                 hl_group = hl.group,
-                priority = 100,  -- Set appropriate priority
+                priority = 100,
             }
         )
+        ::continue::
     end
 end
 
