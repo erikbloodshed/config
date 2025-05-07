@@ -1,13 +1,15 @@
+vim.api.nvim_create_autocmd("Filetype", {
+    pattern = { "help", "qf" },
+    callback = function(args)
+        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
+    end,
+})
+
 vim.api.nvim_create_autocmd({ "BufEnter" }, {
     pattern = { "*" },
     callback = function()
         require("custom_ui.input")
         require("custom_ui.select")
-        require("custom_ui.qf").setup({
-            show_multiple_lines = false,
-            max_filename_length = 30,
-        })
-
         vim.keymap.set('n', "<Right>", require("bufferswitch").goto_next_buffer, { noremap = true, silent = true })
         vim.keymap.set('n', "<Left>", require("bufferswitch").goto_prev_buffer, { noremap = true, silent = true })
     end,
@@ -38,13 +40,6 @@ vim.api.nvim_create_autocmd("Filetype", {
     end,
 })
 
-vim.api.nvim_create_autocmd("Filetype", {
-    pattern = { "help", "qf" },
-    callback = function(args)
-        vim.keymap.set("n", "q", vim.cmd.bdelete, { buffer = args.buf, silent = true, noremap = true })
-    end,
-})
-
 vim.api.nvim_create_autocmd({ "TermOpen" }, {
     pattern = { "*" },
     callback = function()
@@ -54,6 +49,11 @@ vim.api.nvim_create_autocmd({ "TermOpen" }, {
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
+        require("custom_ui.qf").setup({
+            show_multiple_lines = false,
+            max_filename_length = 30,
+        })
+
         -- Configure Neovim's built-in diagnostics
         vim.diagnostic.config({
             virtual_text = false,           -- Disable virtual text diagnostics

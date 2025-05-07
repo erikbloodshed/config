@@ -25,20 +25,38 @@ vim.api.nvim_create_autocmd("DiagnosticChanged", {
             -- Query the quickfix list info to check if it's open
             local qf_info = vim.fn.getqflist({ winid = 0 })
             if qf_info.winid ~= 0 then -- winid 0 means no quickfix window is open
-                 vim.schedule(function()
+                vim.schedule(function()
                     -- Check if we have more than one window before trying to close
                     if #vim.api.nvim_list_wins() > 1 then
                         vim.cmd.cclose()
                         quickfix_is_open = false -- Update our cached state
                     end
-                 end)
+                end)
             end
         end
-
     end,
 })
 
 -- Add this new autocommand
+local auto_close_group = vim.api.nvim_create_augroup("DiagnosticsAutoCloseOnBufLeave", { clear = true })
+
+vim.api.nvim_create_autocmd("BufLeave", {
+    group = auto_close_group,
+    pattern = "*",                                                 -- Trigger on leaving any buffer
+    callback = function()
+        local qf_info = vim.fn.getqflist({ winid = 0, title = 1 }) -- title = 1 requests title info
+
+        if qf_info.winid ~= 0 and qf_info.title == "Diagnostics" then
+            if #vim.api.nvim_list_wins() > 1 then
+                vim.cmd.cclose()
+                quickfix_is_open = false -- Update the cached state (this variable is local to diagnostics.lua)
+                vim.notify("Quickfix closed.", vim.log.levels.INFO)
+            else
+                vim.notify("Cannot close quickfix: It's the last window.", vim.log.levels.WARN)
+            end
+        end
+    end,
+})
 
 M = {
     -- Open the quickfix list with proper sizing based on content
@@ -70,7 +88,7 @@ M = {
         quickfix_is_open = qf_info.winid ~= 0 -- winid 0 means no quickfix window is open
 
         if quickfix_is_open then
-             -- Check if we have more than one window before trying to close
+            -- Check if we have more than one window before trying to close
             if #vim.api.nvim_list_wins() > 1 then
                 vim.cmd.cclose()
                 quickfix_is_open = false -- Update our cached state
@@ -82,28 +100,5 @@ M = {
         end
     end
 }
--- ... (update_quickfixlist, DiagnosticChanged autocommand, M table definition) ...
-
--- Autocommand group to prevent duplication
-local auto_close_group = vim.api.nvim_create_augroup("DiagnosticsAutoCloseOnBufLeave", { clear = true })
-
-vim.api.nvim_create_autocmd("BufLeave", {
-    group = auto_close_group,
-    pattern = "*", -- Trigger on leaving any buffer
-    callback = function()
-        local qf_info = vim.fn.getqflist({ winid = 0, title = 1 }) -- title = 1 requests title info
-
-        if qf_info.winid ~= 0 and qf_info.title == "Diagnostics" then
-            if #vim.api.nvim_list_wins() > 1 then
-                vim.cmd.cclose()
-                quickfix_is_open = false -- Update the cached state (this variable is local to diagnostics.lua)
-                vim.notify("Quickfix closed.", vim.log.levels.INFO)
-            else
-                vim.notify("Cannot close quickfix: It's the last window.", vim.log.levels.WARN)
-            end
-        end
-    end,
-})
 
 return M
-
