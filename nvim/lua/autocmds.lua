@@ -1,4 +1,4 @@
-vim.api.nvim_create_autocmd({ "BufEnter" }, {
+vim.api.nvim_create_autocmd({ "VimEnter" }, {
     pattern = { "*" },
     callback = function()
         require("bufferswitch").setup()
@@ -8,10 +8,6 @@ vim.api.nvim_create_autocmd({ "BufEnter" }, {
             show_multiple_lines = false,
             max_filename_length = 30,
         })
-
-        -- local arg = { buffer = args.buf, noremap = true }
-        -- vim.keymap.set("n", "<Left>", function() vim.cmd("bprev") end, arg)
-        -- vim.keymap.set("n", "<Right>", function() vim.cmd("bnext") end, arg)
     end,
 })
 
