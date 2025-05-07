@@ -17,10 +17,6 @@ function M.setup(user_config)
     -- Set up initial buffer state and autocmds
     core.initialize(M.config)
 
-    -- Set up keymaps with functions that respect special buffers
-    vim.keymap.set('n', M.config.next_key, core.next_buffer, { noremap = true, silent = true })
-    vim.keymap.set('n', M.config.prev_key, core.prev_buffer, { noremap = true, silent = true })
-
     -- Debug command
     if M.config.debug then
         vim.api.nvim_create_user_command('BufferSwitcherDebug', core.debug_buffers, {})
@@ -47,6 +43,16 @@ end
 function M.force_refresh()
     core.refresh_buffer_list()
     tabline.manage_tabline(M.config)
+end
+
+function M.goto_prev_buffer()
+    M.setup()
+    core.prev_buffer()
+end
+
+function M.goto_next_buffer()
+    M.setup()
+    core.next_buffer()
 end
 
 return M
