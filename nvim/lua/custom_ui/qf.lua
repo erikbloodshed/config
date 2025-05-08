@@ -1,6 +1,5 @@
 --[[
   custom_qf.lua - A custom quickfix formatter for Neovim
-
   This module improves the appearance of quickfix and location list windows by:
   1. Adding diagnostic signs (/󱈸//) with appropriate highlighting
   2. Highlighting file paths using the Directory highlight group
@@ -12,13 +11,11 @@
 
 local M = {}
 
--- Define the sign symbols and their highlight groups for different diagnostic types
-
 local signs = {
-    error   = { text = '', hl = 'DiagnosticSignError' },
-    warning = { text = '󱈸', hl = 'DiagnosticSignWarn' },
-    info    = { text = '', hl = 'DiagnosticSignInfo' },
-    hint    = { text = '', hl = 'DiagnosticSignHint' },
+    error   = { text = "", hl = 'DiagnosticSignError' },
+    warning = { text = "󱈸", hl = 'DiagnosticSignWarn' },
+    info    = { text = "", hl = 'DiagnosticSignInfo' },
+    hint    = { text = "", hl = 'DiagnosticSignHint' },
 }
 
 -- Create a unique namespace for our buffer highlights
