@@ -6,13 +6,16 @@ vim.api.nvim_create_autocmd("Filetype", {
 })
 
 vim.api.nvim_create_autocmd({ "BufEnter" }, {
-    pattern = { "*" },
     callback = function()
-        require("term")
         require("custom_ui.input")
         require("custom_ui.select")
-        vim.keymap.set('n', "<Right>", require("bufferswitch").goto_next_buffer, { noremap = true, silent = true })
-        vim.keymap.set('n', "<Left>", require("bufferswitch").goto_prev_buffer, { noremap = true, silent = true })
+
+        vim.keymap.set('n', "<Right>", require("bufferswitch").goto_next_buffer,
+            { noremap = true, silent = true })
+        vim.keymap.set('n', "<Left>", require("bufferswitch").goto_prev_buffer,
+            { noremap = true, silent = true })
+        vim.keymap.set("n", "<leader>t", require("term").open_terminal_in_file_directory,
+            { noremap = true, silent = true, nowait = true })
     end,
 })
 
