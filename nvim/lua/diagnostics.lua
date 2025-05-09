@@ -61,6 +61,11 @@ vim.api.nvim_create_autocmd("BufLeave", {
 M = {
     -- Open the quickfix list with proper sizing based on content
     open_quickfixlist = function()
+        require("custom_ui.qf").setup({
+            show_multiple_lines = false,
+            max_filename_length = 30,
+        })
+
         local diagnostics = vim.diagnostic.get()
         if vim.tbl_isempty(diagnostics) then
             vim.notify("No diagnostics in current buffer.", vim.log.levels.INFO)

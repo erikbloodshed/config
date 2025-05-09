@@ -10,6 +10,7 @@ local M = {
         local data_path = utils.get_data_path(config.data_dir_name)
         local hash = { compile = nil, assemble = nil }
         local data_file = nil
+        local cmd_args = nil
 
         local compile_args = utils.merged_list(config.compile_opts, { "-o", exe_file, src_file })
         local assemble_args = utils.merged_list(config.compile_opts, { "-S", "-o", asm_file, src_file })
@@ -23,7 +24,7 @@ local M = {
 
         local function run()
             if compile() then
-                handler.run(exe_file, data_file)
+                handler.run(exe_file, data_file, cmd_args)
             end
         end
 
@@ -100,6 +101,14 @@ local M = {
             end
         end
 
+        local function set_cmd_args()
+            vim.ui.input({prompt = "Enter command-line arguments: ", default = cmd_args or ""}, function (args)
+                if args then
+                    cmd_args = args
+                end
+            end)
+        end
+
         return {
             compile = compile,
             run = run,
@@ -107,6 +116,7 @@ local M = {
             add_data_file = add_data_file,
             remove_data_file = remove_data_file,
             get_build_info = get_build_info,
+            set_cmd_args = set_cmd_args
         }
     end
 }

@@ -41,6 +41,7 @@ vim.api.nvim_create_autocmd("Filetype", {
         vim.keymap.set("n", "<leader>ra", function() build.show_assembly() end, arg)
         vim.keymap.set("n", "<leader>fa", function() build.add_data_file() end, arg)
         vim.keymap.set("n", "<leader>fr", function() build.remove_data_file() end, arg)
+        vim.keymap.set("n", "<leader>aa", function() build.set_cmd_args() end, arg)
         vim.keymap.set({ "n", "i" }, "<F12>", function() build.get_build_info() end, arg)
     end,
 })
@@ -54,11 +55,6 @@ vim.api.nvim_create_autocmd({ "TermOpen" }, {
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
-        require("custom_ui.qf").setup({
-            show_multiple_lines = false,
-            max_filename_length = 30,
-        })
-
         -- Configure Neovim's built-in diagnostics
         vim.diagnostic.config({
             virtual_text = false,           -- Disable virtual text diagnostics

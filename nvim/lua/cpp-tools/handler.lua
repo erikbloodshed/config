@@ -37,13 +37,19 @@ local M = {
         return false
     end,
 
-    run = function(exe, data_file)
+    run = function(exe, datfile, args)
         vim.cmd.terminal()
         vim.defer_fn(function()
             local command = exe
-            if data_file ~= nil then
-                command = exe .. " < " .. data_file
+
+            if args then
+                command = command .. " " .. args
             end
+
+            if datfile then
+                command = command .. " < " .. datfile
+            end
+
             if vim.b.terminal_job_id then
                 vim.api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
             else
