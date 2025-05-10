@@ -24,7 +24,7 @@ local M = {
 
         local function run()
             if compile() then
-                handler.run(exe_file, data_file, cmd_args)
+                handler.run(exe_file, cmd_args, data_file)
             end
         end
 
@@ -65,7 +65,7 @@ local M = {
                     prompt = "Remove data file (" .. vim.fn.fnamemodify(data_file, ':t') .. ")?",
                 }, function(choice)
                     if choice == "Yes" then
-                        data_file = nil
+                        data_file = ""
                         vim.notify("Data file removed.", vim.log.levels.INFO)
                     end
                 end)
@@ -76,14 +76,15 @@ local M = {
 
         local function get_build_info()
             local lines = {
-                "Filename         : " .. vim.fn.fnamemodify(src_file, ':t'),
-                "Filetype         : " .. vim.bo.filetype,
-                "Compiler         : " .. config.compiler,
-                "Compile Flags    : " .. table.concat(config.compile_opts, " "),
-                "Output Directory : " .. config.output_directory,
-                "Data Directory   : " .. (data_path or "Not Found"),
-                "Data File In Use : " .. (data_file and vim.fn.fnamemodify(data_file, ':t') or "None"),
-                "Date Modified    : " .. utils.get_date_modified(src_file),
+                "Filename          : " .. vim.fn.fnamemodify(src_file, ':t'),
+                "Filetype          : " .. vim.bo.filetype,
+                "Compiler          : " .. config.compiler,
+                "Compile Flags     : " .. table.concat(config.compile_opts, " "),
+                "Output Directory  : " .. config.output_directory,
+                "Data Directory    : " .. (data_path or "Not Found"),
+                "Data File In Use  : " .. (data_file and vim.fn.fnamemodify(data_file, ':t') or "None"),
+                "Command Arguments : " .. (cmd_args or "None"),
+                "Date Modified     : " .. utils.get_date_modified(src_file),
             }
 
             local ns_id = vim.api.nvim_create_namespace("build_info_highlight")
@@ -102,11 +103,14 @@ local M = {
         end
 
         local function set_cmd_args()
-            vim.ui.input({prompt = "Enter command-line arguments: ", default = cmd_args or ""}, function (args)
-                if args then
-                    cmd_args = args
-                end
-            end)
+            vim.ui.input({ prompt = "Enter command-line arguments: ", default = cmd_args or "" },
+                function(args)
+                    if args ~= "" then
+                        cmd_args = args
+                    else
+                        cmd_args = nil
+                    end
+                end)
         end
 
         return {

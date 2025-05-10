@@ -37,8 +37,9 @@ local M = {
         return false
     end,
 
-    run = function(exe, datfile, args)
+    run = function(exe, args, datfile)
         vim.cmd.terminal()
+
         vim.defer_fn(function()
             local command = exe
 
