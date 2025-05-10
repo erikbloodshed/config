@@ -65,7 +65,7 @@ local M = {
                     prompt = "Remove data file (" .. vim.fn.fnamemodify(data_file, ':t') .. ")?",
                 }, function(choice)
                     if choice == "Yes" then
-                        data_file = ""
+                        data_file = nil
                         vim.notify("Data file removed.", vim.log.levels.INFO)
                     end
                 end)

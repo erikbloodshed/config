@@ -68,7 +68,7 @@ return {
             end,
         },
         {
-            "<leader>cc",
+            "<leader>ec",
             function()
                 require("neo-tree.command").execute({
                     toggle = true,
