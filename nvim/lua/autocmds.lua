@@ -36,11 +36,11 @@ vim.api.nvim_create_autocmd("Filetype", {
         local build = require("cpp-tools.build").init(config)
         local arg = { buffer = args.buf, noremap = true }
 
-        vim.keymap.set("n", "<leader>cc", function() build.compile() end, arg)
-        vim.keymap.set("n", "<leader>rc", function() build.run() end, arg)
-        vim.keymap.set("n", "<leader>asm", function() build.show_assembly() end, arg)
-        vim.keymap.set("n", "<leader>ad", function() build.add_data_file() end, arg)
-        vim.keymap.set("n", "<leader>rd", function() build.remove_data_file() end, arg)
+        vim.keymap.set("n", "<leader>rc", function() build.compile() end, arg)
+        vim.keymap.set("n", "<leader>rr", function() build.run() end, arg)
+        vim.keymap.set("n", "<leader>ra", function() build.show_assembly() end, arg)
+        vim.keymap.set("n", "<leader>da", function() build.add_data_file() end, arg)
+        vim.keymap.set("n", "<leader>dr", function() build.remove_data_file() end, arg)
         vim.keymap.set("n", "<leader>sa", function() build.set_cmd_args() end, arg)
         vim.keymap.set({ "n", "i" }, "<leader>bi", function() build.get_build_info() end, arg)
     end,
@@ -80,6 +80,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>fc", function()
             vim.lsp.buf.format({ async = true })
         end, opts)
-        vim.keymap.set("n", "<leader>qf", function() diagnostics.open_quickfixlist() end, opts)
+        vim.keymap.set("n", "<leader>xx", function() diagnostics.open_quickfixlist() end, opts)
     end,
 })
