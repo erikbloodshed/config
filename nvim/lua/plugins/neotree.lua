@@ -54,6 +54,13 @@ return {
                     vim.keymap.set("i", "<esc>", vim.cmd.stopinsert, { buffer = args.bufnr })
                 end,
             },
+            {
+                event = "neo_tree_popup_buffer_enter",
+                handler = function(args)
+                    show_cursor()
+                    vim.keymap.set("i", "<esc>", vim.cmd.startinsert, { buffer = args.bufnr })
+                end,
+            },
         },
     },
     keys = {
