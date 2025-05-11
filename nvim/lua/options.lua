@@ -26,7 +26,7 @@ else
 end
 
 set.updatetime = 200
-set.timeoutlen = 300
+set.timeoutlen = 500
 set.ttimeoutlen = 10
 set.hidden = true
 set.history = 100

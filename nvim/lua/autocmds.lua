@@ -80,6 +80,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>fc", function()
             vim.lsp.buf.format({ async = true })
         end, opts)
-        vim.keymap.set("n", "<leader>qf", function() diagnostics.toggle_quickfixlist() end, opts)
+        vim.keymap.set("n", "<leader>qf", function() diagnostics.open_quickfixlist() end, opts)
     end,
 })

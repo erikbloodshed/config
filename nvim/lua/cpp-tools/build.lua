@@ -8,12 +8,12 @@ local M = {
         local asm_file = exe_file .. ".s"
 
         local data_path = utils.get_data_path(config.data_dir_name)
-        local hash = { compile = nil, assemble = nil }
         local data_file = nil
         local cmd_args = nil
+        local hash = { compile = nil, assemble = nil }
 
         local compile_args = utils.merged_list(config.compile_opts, { "-o", exe_file, src_file })
-        local assemble_args = utils.merged_list(config.compile_opts, { "-S", "-o", asm_file, src_file })
+        local assemble_args = utils.merged_list(config.compile_opts, { "-c", "-S", "-o", asm_file, src_file })
 
         local compile_command = { compiler = config.compiler, arg = compile_args }
         local assemble_command = { compiler = config.compiler, arg = assemble_args }

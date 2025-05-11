@@ -6,7 +6,7 @@ end
 
 local M = {
     translate = function(value, key, cmd)
-        local diagnostics = vim.diagnostic.get(0, { severity = { vim.diagnostic.severity.ERROR } })
+        local diagnostics = vim.diagnostic.count(0, { severity = { vim.diagnostic.severity.ERROR } })
 
         if #diagnostics == 0 then
             if vim.bo.modified then vim.cmd("silent! write") end
