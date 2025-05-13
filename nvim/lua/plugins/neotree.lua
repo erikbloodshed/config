@@ -35,11 +35,11 @@ return {
         event_handlers = {
             {
                 event = "neo_tree_buffer_enter",
-                handler = hide_cursor,
+                handler = function() hide_cursor() end,
             },
             {
                 event = "neo_tree_buffer_leave",
-                handler = show_cursor,
+                handler = function() show_cursor() end,
             },
             {
                 event = "file_opened",
@@ -58,7 +58,7 @@ return {
                 event = "neo_tree_popup_buffer_enter",
                 handler = function(args)
                     show_cursor()
-                    vim.keymap.set("i", "<esc>", vim.cmd.startinsert, { buffer = args.bufnr })
+                    vim.keymap.set("i", "<esc>", vim.cmd.stopinsert, { buffer = args.bufnr })
                 end,
             },
         },
@@ -67,7 +67,7 @@ return {
         {
             "<leader>ef",
             function()
-                local exclude_ft = { query = true, checkhealth = true, help = true }
+                local exclude_ft = { query = true, checkhealth = true, help = true, qf = true }
                 require("neo-tree.command").execute({
                     toggle = true,
                     dir = exclude_ft[vim.bo.filetype] and vim.fn.getcwd() or vim.fn.expand("%:p:h"),

@@ -14,7 +14,6 @@ vim.api.nvim_create_autocmd({ "BufEnter" }, {
             { noremap = true, silent = true })
         vim.keymap.set('n', "<Left>", function() require("bufferswitch").goto_prev_buffer() end,
             { noremap = true, silent = true })
-
         vim.keymap.set("n", "<leader>ot", function() require("term").open_terminal_in_file_directory() end,
             { noremap = true, silent = true, nowait = true })
     end,
