@@ -15,7 +15,7 @@ local get_options_file = function(filename)
     return nil
 end
 
-M = {
+return {
     init = function(options)
         local config = {
             c = {
@@ -37,7 +37,7 @@ M = {
 
         config = vim.tbl_deep_extend('force', config, options or {})
 
-        local ft = vim.bo.filetype
+        local ft = vim.api.nvim_get_option_value("filetype", { buf = 0 })
         local compile_opts = config[ft].compile_opts
         local fallback = config[ft].fallback_flags
 
@@ -46,5 +46,3 @@ M = {
         return config[ft]
     end
 }
-
-return M

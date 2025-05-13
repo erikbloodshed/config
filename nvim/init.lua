@@ -59,5 +59,6 @@ vim.cmd.colorscheme("tokyonight")
 
 require("options")
 require("autocmds")
+require("statusline")
 
 vim.lsp.enable({ "basedpyright", "clangd", "luals" })

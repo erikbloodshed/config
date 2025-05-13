@@ -12,11 +12,13 @@ end
 
 return {
     "nvim-neo-tree/neo-tree.nvim",
+
     dependencies = {
         "nvim-lua/plenary.nvim",
         "nvim-tree/nvim-web-devicons",
         "MunifTanjim/nui.nvim",
     },
+
     opts = {
         source_selector = {
             winbar = false,
@@ -63,14 +65,17 @@ return {
             },
         },
     },
+
     keys = {
         {
             "<leader>ef",
             function()
                 local exclude_ft = { query = true, checkhealth = true, help = true, qf = true }
+                local ft = vim.api.nvim_get_option_value("filetype", { buf = 0 })
                 require("neo-tree.command").execute({
                     toggle = true,
-                    dir = exclude_ft[vim.bo.filetype] and vim.fn.getcwd() or vim.fn.expand("%:p:h"),
+                    reveal = true,
+                    dir = exclude_ft[ft] and vim.fn.getcwd() or vim.fn.expand("%:p:h"),
                 })
             end,
         },

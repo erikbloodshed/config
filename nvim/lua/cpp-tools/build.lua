@@ -77,7 +77,7 @@ local M = {
         local function get_build_info()
             local lines = {
                 "Filename          : " .. vim.fn.fnamemodify(src_file, ':t'),
-                "Filetype          : " .. vim.bo.filetype,
+                "Filetype          : " .. vim.api.nvim_get_option_value("filetype", { buf = 0 }),
                 "Compiler          : " .. config.compiler,
                 "Compile Flags     : " .. table.concat(config.compile_opts, " "),
                 "Output Directory  : " .. config.output_directory,

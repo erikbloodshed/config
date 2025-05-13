@@ -71,18 +71,14 @@ return {
 
     open = function(title, lines, ft)
         local max_line_length = 0
+
         for _, line in ipairs(lines) do
             max_line_length = math.max(max_line_length, #line)
         end
+
         local width = math.min(max_line_length + 4, math.floor(vim.o.columns * 0.8))
         local height = math.min(#lines, math.floor(vim.o.lines * 0.8))
-
         local buf = vim.api.nvim_create_buf(false, true)
-
-        vim.bo[buf].buftype = "nofile"
-        vim.bo[buf].bufhidden = "wipe"
-        vim.bo[buf].swapfile = false
-        vim.bo[buf].filetype = ft
 
         -- Fill buffer content
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -100,7 +96,12 @@ return {
             title_pos = "center",
         })
 
-        vim.bo[buf].modifiable = false
+        vim.api.nvim_set_option_value("buftype", "nofile", {scope = "local", buf = buf})
+        vim.api.nvim_set_option_value("bufhidden", "wipe", {scope = "local", buf = buf})
+        vim.api.nvim_set_option_value("swapfile", false, {scope = "local", buf = buf})
+        vim.api.nvim_set_option_value("filetype", ft, {scope = "local", buf = buf})
+        vim.api.nvim_set_option_value("modifiable", false, {scope = "local", buf = buf})
+
         vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf, noremap = true, nowait = true, silent = true })
 
         return buf
