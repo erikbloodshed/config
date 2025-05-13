@@ -52,7 +52,7 @@ local function lsp_status()
     end
 
     -- Store result in cache
-    cache.lsp.result = "[" .. table.concat(names, ", ") .. "]"
+    cache.lsp.result = " " .. table.concat(names, ", ")
     cache.lsp.last_updated = vim.loop.now()
 
     return cache.lsp.result
@@ -123,13 +123,7 @@ end
 -- Memoized filetype check
 local empty_statusline_filetypes = {
     ["neo-tree"] = true,
-    -- Add more filetypes as needed
 }
-
-local function should_use_empty_statusline()
-    local ft = vim.api.nvim_get_option_value("filetype", { buf = 0 })
-    return empty_statusline_filetypes[ft] or false
-end
 
 -- Reset cache when changing buffers
 local function reset_cache()
@@ -142,16 +136,18 @@ end
 
 function _G.statusline()
     -- Check if current buffer should have empty statusline
-    if should_use_empty_statusline() then
-        return "%y"
+    local ft = vim.api.nvim_get_option_value("filetype", { buf = 0 })
+    if empty_statusline_filetypes[ft] or false then
+        return ""
     end
 
     -- Pre-allocate components table with estimated size
-    local components = { "%f", "%h%w%m%r" }
+    local components = { "%t", "%h%w%m%r" }
 
     -- Add diagnostics if present (before the alignment)
     local diag_info = get_diagnostic_counts()
-    if diag_info ~= "" then components[#components + 1] = diag_info
+    if diag_info ~= "" then
+        components[#components + 1] = diag_info
     end
 
     components[#components + 1] = "%=" -- Right align the rest
@@ -159,11 +155,11 @@ function _G.statusline()
     -- Add LSP status if present
     local lsp_info = lsp_status()
     if lsp_info ~= "" then
-        components[#components + 1] = lsp_info
+        components[#components + 1] = "%-10(" .. (lsp_info) .. "%)"
     end
 
     -- Position information - combine these to reduce concat operations
-    components[#components + 1] = "%-14(%l,%c%V%) %P"
+    components[#components + 1] = "%-12(%l:%c%) %P"
 
     return table.concat(components, " ")
 end
