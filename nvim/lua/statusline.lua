@@ -22,10 +22,7 @@ local function lsp_status()
     return "[" .. table.concat(names, ", ") .. "]"
 end
 
----Get diagnostic counts for the current buffer
----@return string
 local function get_diagnostic_counts()
-    -- Get all diagnostics for current buffer
     local diagnostics = vim.diagnostic.get(0)
     if not diagnostics or #diagnostics == 0 then
         return ""
@@ -41,13 +38,19 @@ local function get_diagnostic_counts()
         end
     end
 
-    -- Format the output
+    -- Format the output with highlights
     local result = {}
+    local highlight_groups = {
+        "%#DiagnosticError#",
+        "%#DiagnosticWarn#",
+        "%#DiagnosticInfo#",
+        "%#DiagnosticHint#"
+    }
     local severity_labels = { "E:", "W:", "I:", "H:" }
 
     for i = 1, 4 do
         if counts[i] > 0 then
-            table.insert(result, severity_labels[i] .. counts[i])
+            table.insert(result, highlight_groups[i] .. severity_labels[i] .. counts[i] .. "%*")
         end
     end
 
@@ -59,6 +62,17 @@ local function get_diagnostic_counts()
 end
 
 function _G.statusline()
+    -- List of filetypes that should have an empty statusline
+    local empty_statusline_filetypes = {
+        ["neo-tree"] = true,
+        -- Add more filetypes as needed
+    }
+
+    -- Check if current buffer should have empty statusline
+    if empty_statusline_filetypes[vim.api.nvim_get_option_value("filetype", { buf = 0 })] then
+        return "%y"
+    end
+
     local components = {
         "%f",       -- Relative file path
         "%h%w%m%r", -- Help, preview, modified, readonly flags
@@ -79,7 +93,7 @@ function _G.statusline()
     end
 
     -- Position information
-    table.insert(components, "%-14(%l,%c%)")
+    table.insert(components, "%-14(%l,%c%V%)")
     table.insert(components, "%P")
 
     return table.concat(components, " ")
