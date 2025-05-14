@@ -9,7 +9,7 @@ local M = {
         local diagnostics = vim.diagnostic.count(0, { severity = { vim.diagnostic.severity.ERROR } })
 
         if #diagnostics == 0 then
-            if vim.bo.modified then vim.cmd("silent! write") end
+            if vim.api.nvim_get_option_value("modified", { buf = 0 }) then vim.cmd("silent! write") end
             local buffer_hash = get_buffer_hash()
 
             if value[key] ~= buffer_hash then
