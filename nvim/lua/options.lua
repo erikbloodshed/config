@@ -35,6 +35,7 @@ set.showtabline = 0
 set.splitright = true
 set.swapfile = false
 set.synmaxcol = 128
+set.showmode = false
 setw.signcolumn = "yes"
 setw.cursorline = true
 setw.cursorlineopt = "both"
