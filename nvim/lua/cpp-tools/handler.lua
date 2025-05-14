@@ -24,16 +24,16 @@ local M = {
                     if result.stderr ~= nil then
                         vim.notify(result.stderr, vim.log.levels.ERROR)
                     end
-
                     return false
                 end
             end
 
-            vim.notify("Source code is already compiled.", vim.log.levels.WARN)
+            vim.notify("Source code is already compiled.", vim.log.levels.HINT)
             return true
         end
 
         require("diagnostics").open_quickfixlist()
+
         return false
     end,
 
