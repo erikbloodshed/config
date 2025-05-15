@@ -15,7 +15,7 @@ local M = {
         local compile_args = utils.merged_list(config.compile_opts, { "-o", exe_file, src_file })
         local assemble_args = utils.merged_list(config.compile_opts, { "-c", "-S", "-o", asm_file, src_file })
 
-        local compile_command = { compiler = config.compiler, arg = compile_args }
+        local compile_command = { compiler = config.compiler, arg = compile_args, timeout = 15000, kill_delay = 3000 }
         local assemble_command = { compiler = config.compiler, arg = assemble_args }
 
         local function compile()
