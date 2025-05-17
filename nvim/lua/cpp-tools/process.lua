@@ -24,6 +24,7 @@ Returns:
                                 Nil if the command executed successfully or failed on its own.
 ]]
 local uv = vim.uv
+local fn = vim.fn
 
 -- Configuration constants
 local DEFAULT_CONFIG = {
@@ -34,7 +35,7 @@ local DEFAULT_CONFIG = {
 }
 
 -- OS detection for platform-specific behavior
-local is_windows = vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1
+local is_windows = fn.has('win32') == 1 or fn.has('win64') == 1
 
 -- Signal constants for better readability and platform independence
 local SIGNALS = {
@@ -205,7 +206,7 @@ function M.execute(cmd_table)
     end
 
     -- Resolve command path to handle relative paths consistently
-    local resolved_path = vim.fn.exepath(command_path)
+    local resolved_path = fn.exepath(command_path)
     if resolved_path == "" then
         result.stderr = ERROR_MESSAGES.not_executable .. command_path
         result.error_type = get_error_type_name(ERROR_TYPES.VALIDATION)

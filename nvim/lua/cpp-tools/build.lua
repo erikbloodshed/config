@@ -1,10 +1,12 @@
-local handler = require("cpp-tools.handler")
-local utils = require("cpp-tools.utils")
-
 local M = {
     init = function(config)
-        local src_file = vim.api.nvim_buf_get_name(0)
-        local exe_file = config.output_directory .. vim.fn.expand("%:t:r")
+        local handler = require("cpp-tools.handler")
+        local utils = require("cpp-tools.utils")
+        local api = vim.api
+        local fn = vim.fn
+
+        local src_file = api.nvim_buf_get_name(0)
+        local exe_file = config.output_directory .. fn.expand("%:t:r")
         local asm_file = exe_file .. ".s"
 
         local data_path = utils.get_data_path(config.data_dir_name)
@@ -46,12 +48,12 @@ local M = {
                 vim.ui.select(files, {
                     prompt = "Current: " .. (data_file or "None"),
                     format_item = function(item)
-                        return vim.fn.fnamemodify(item, ':t')
+                        return fn.fnamemodify(item, ':t')
                     end,
                 }, function(choice)
                     if choice then
                         data_file = choice
-                        vim.notify("Data file set to: " .. vim.fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
+                        vim.notify("Data file set to: " .. fn.fnamemodify(choice, ':t'), vim.log.levels.INFO)
                     end
                 end)
             else
@@ -62,7 +64,7 @@ local M = {
         local function remove_data_file()
             if data_file then
                 vim.ui.select({ "Yes", "No" }, {
-                    prompt = "Remove data file (" .. vim.fn.fnamemodify(data_file, ':t') .. ")?",
+                    prompt = "Remove data file (" .. fn.fnamemodify(data_file, ':t') .. ")?",
                 }, function(choice)
                     if choice == "Yes" then
                         data_file = nil
@@ -76,25 +78,25 @@ local M = {
 
         local function get_build_info()
             local lines = {
-                "Filename          : " .. vim.fn.fnamemodify(src_file, ':t'),
-                "Filetype          : " .. vim.api.nvim_get_option_value("filetype", { buf = 0 }),
+                "Filename          : " .. fn.fnamemodify(src_file, ':t'),
+                "Filetype          : " .. api.nvim_get_option_value("filetype", { buf = 0 }),
                 "Compiler          : " .. config.compiler,
                 "Compile Flags     : " .. table.concat(config.compile_opts, " "),
                 "Output Directory  : " .. config.output_directory,
                 "Data Directory    : " .. (data_path or "Not Found"),
-                "Data File In Use  : " .. (data_file and vim.fn.fnamemodify(data_file, ':t') or "None"),
+                "Data File In Use  : " .. (data_file and fn.fnamemodify(data_file, ':t') or "None"),
                 "Command Arguments : " .. (cmd_args or "None"),
                 "Date Modified     : " .. utils.get_date_modified(src_file),
             }
 
-            local ns_id = vim.api.nvim_create_namespace("build_info_highlight")
+            local ns_id = api.nvim_create_namespace("build_info_highlight")
             local buf_id = utils.open("Build Info", lines, "text")
 
             for idx = 1, #lines do
                 local line = lines[idx]
                 local colon_pos = line:find(":")
                 if colon_pos and colon_pos > 1 then
-                    vim.api.nvim_buf_set_extmark(buf_id, ns_id, idx - 1, 0, {
+                    api.nvim_buf_set_extmark(buf_id, ns_id, idx - 1, 0, {
                         end_col = colon_pos - 1,
                         hl_group = "Keyword"
                     })

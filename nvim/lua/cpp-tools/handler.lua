@@ -1,19 +1,23 @@
+local cmd = vim.cmd
+local fn = vim.fn
+local api = vim.api
+
 local get_buffer_hash = function()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+    local lines = api.nvim_buf_get_lines(0, 0, -1, true)
     local content = table.concat(lines, "\n")
-    return vim.fn.sha256(content)
+    return fn.sha256(content)
 end
 
 local M = {
-    translate = function(value, key, cmd)
+    translate = function(value, key, command)
         local diagnostics = vim.diagnostic.count(0, { severity = { vim.diagnostic.severity.ERROR } })
 
         if #diagnostics == 0 then
-            if vim.api.nvim_get_option_value("modified", { buf = 0 }) then vim.cmd("silent! write") end
+            if api.nvim_get_option_value("modified", { buf = 0 }) then cmd("silent! write") end
             local buffer_hash = get_buffer_hash()
 
             if value[key] ~= buffer_hash then
-                local result = require("cpp-tools.process").execute(cmd)
+                local result = require("cpp-tools.process").execute(command)
 
                 if result.code == 0 then
                     value[key] = buffer_hash
@@ -48,11 +52,11 @@ local M = {
             command = command .. " < " .. datfile
         end
 
-        vim.cmd.terminal()
+        cmd.terminal()
 
         vim.defer_fn(function()
             if vim.b.terminal_job_id then
-                vim.api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
+                api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
             else
                 vim.notify("Could not get terminal job ID to send command.", vim.log.levels.WARN)
             end

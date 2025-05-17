@@ -1,13 +1,16 @@
-local hl = vim.api.nvim_get_hl(0, { name = "Cursor", link = false })
+local api = vim.api
+local opt = vim.opt
+
+local hl = api.nvim_get_hl(0, { name = "Cursor", link = false })
 
 local function hide_cursor()
-    vim.api.nvim_set_hl(0, "Cursor", { blend = 100, fg = hl.fg, bg = hl.bg })
-    vim.opt.guicursor:append("a:Cursor/lCursor")
+    api.nvim_set_hl(0, "Cursor", { blend = 100, fg = hl.fg, bg = hl.bg })
+    opt.guicursor:append("a:Cursor/lCursor")
 end
 
 local function show_cursor()
-    vim.api.nvim_set_hl(0, "Cursor", { blend = 0, fg = hl.fg, bg = hl.bg })
-    vim.opt.guicursor:remove("a:Cursor/lCursor")
+    api.nvim_set_hl(0, "Cursor", { blend = 0, fg = hl.fg, bg = hl.bg })
+    opt.guicursor:remove("a:Cursor/lCursor")
 end
 
 return {
@@ -70,21 +73,10 @@ return {
         {
             "<leader>ef",
             function()
-                local exclude_ft = { query = true, checkhealth = true, help = true, qf = true }
-                local ft = vim.api.nvim_get_option_value("filetype", { buf = 0 })
                 require("neo-tree.command").execute({
                     toggle = true,
                     reveal = true,
-                    dir = exclude_ft[ft] and vim.fn.getcwd() or vim.fn.expand("%:p:h"),
-                })
-            end,
-        },
-        {
-            "<leader>ec",
-            function()
-                require("neo-tree.command").execute({
-                    toggle = true,
-                    dir = vim.fn.stdpath("config"),
+                    reveal_force_cwd = true,
                 })
             end,
         },

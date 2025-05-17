@@ -1,3 +1,5 @@
+local uv = vim.uv
+
 return {
     scan_dir = function(dir)
         -- Return empty on nil input
@@ -7,7 +9,7 @@ return {
         end
 
         -- Fast path for directory existence check
-        local stat = vim.uv.fs_stat(dir)
+        local stat = uv.fs_stat(dir)
         if not stat or stat.type ~= "directory" then
             vim.notify("Directory not found or is not a directory: " .. dir, vim.log.levels.WARN)
             return {}
@@ -122,7 +124,7 @@ return {
     end,
 
     get_date_modified = function(filepath)
-        local file_stats = vim.uv.fs_stat(filepath)
+        local file_stats = uv.fs_stat(filepath)
         if file_stats then
             return os.date("%Y-%B-%d %H:%M:%S", file_stats.mtime.sec)
         else

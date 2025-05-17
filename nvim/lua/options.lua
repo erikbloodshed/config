@@ -1,15 +1,15 @@
-local g = vim.g
+local global = vim.g
 local set = vim.o
 local setw = vim.wo
 local opt = vim.opt
 
-g.loaded_node_provider = 0
-g.loaded_perl_provider = 0
-g.loaded_python3_provider = 0
-g.loaded_ruby_provider = 0
+global.loaded_node_provider = 0
+global.loaded_perl_provider = 0
+global.loaded_python3_provider = 0
+global.loaded_ruby_provider = 0
 
 if vim.fn.has("wsl") == 1 then
-    g.clipboard = {
+    global.clipboard = {
         name = "WslClipboard",
         copy = {
             ["+"] = "clip.exe",

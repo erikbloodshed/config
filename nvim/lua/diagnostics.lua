@@ -1,5 +1,3 @@
--- Cache the quickfix status (optional, can query vim directly)
-
 local auto_close_group = vim.api.nvim_create_augroup("DiagnosticsAutoCloseOnBufLeave", { clear = true })
 
 vim.api.nvim_create_autocmd("BufLeave", {
