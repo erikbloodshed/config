@@ -13,11 +13,26 @@ autocmd({ "BufEnter" }, {
         require("custom_ui.input")
         require("custom_ui.select")
 
-        keyset('n', "<Right>", function() require("bufferswitch").goto_next_buffer() end,
+        local bufswitch = require("bufferswitch")
+
+        keyset('n', "<Right>", function() bufswitch.goto_next_buffer() end,
             { noremap = true, silent = true })
-        keyset('n', "<Left>", function() require("bufferswitch").goto_prev_buffer() end,
+        keyset('n', "<Left>", function() bufswitch.goto_prev_buffer() end,
             { noremap = true, silent = true })
-        keyset("n", "<leader>ot", function() require("term").open_terminal_in_file_directory() end,
+        keyset("n", "<leader>ot", function()
+                local original_directory = vim.fn.getcwd()
+                local current_file = vim.api.nvim_buf_get_name(0)
+                local directory = current_file ~= "" and vim.fn.fnamemodify(current_file, ":h")
+                    or original_directory
+
+                vim.cmd("cd " .. directory .. " | term")
+
+                vim.api.nvim_create_autocmd("TermClose", {
+                    callback = function()
+                        vim.cmd("cd " .. original_directory)
+                    end,
+                })
+            end,
             { noremap = true, silent = true, nowait = true })
     end,
 })
@@ -28,14 +43,14 @@ autocmd("Filetype", {
         vim.opt_local.cinkeys:remove(":")
         vim.opt_local.cindent = true
 
-        local config = require("cpp-tools.config").init({
+        local config = require("codeforge.config").init({
             cpp = {
                 compiler = "g++-15",
                 compile_opts = ".compile_flags",
             }
         })
 
-        local build = require("cpp-tools.build").init(config)
+        local build = require("codeforge.build").init(config)
         local arg = { buffer = args.buf, noremap = true }
 
         keyset("n", "<leader>rc", function() build.compile() end, arg)
@@ -67,9 +82,9 @@ autocmd("LspAttach", {
             signs = {                       -- Define custom text signs for different severity levels
                 text = {
                     [diag.severity.ERROR] = "",
-                    [diag.severity.WARN] = "󱈸",
-                    [diag.severity.HINT] = "",
-                    [diag.severity.INFO] = "",
+                    [diag.severity.WARN]  = "󱈸",
+                    [diag.severity.HINT]  = "",
+                    [diag.severity.INFO]  = "",
                 },
             },
         })

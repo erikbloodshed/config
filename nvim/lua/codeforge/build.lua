@@ -1,7 +1,7 @@
 local M = {
     init = function(config)
-        local handler = require("cpp-tools.handler")
-        local utils = require("cpp-tools.utils")
+        local handler = require("codeforge.handler")
+        local utils = require("codeforge.utils")
         local api = vim.api
         local fn = vim.fn
 

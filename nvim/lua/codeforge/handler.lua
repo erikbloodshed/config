@@ -17,7 +17,7 @@ local M = {
             local buffer_hash = get_buffer_hash()
 
             if value[key] ~= buffer_hash then
-                local result = require("cpp-tools.process").execute(command)
+                local result = require("codeforge.process").execute(command)
 
                 if result.code == 0 then
                     value[key] = buffer_hash
@@ -52,11 +52,12 @@ local M = {
             command = command .. " < " .. datfile
         end
 
-        cmd.terminal()
+        vim.cmd.terminal()
 
         vim.defer_fn(function()
-            if vim.b.terminal_job_id then
-                api.nvim_chan_send(vim.b.terminal_job_id, command .. "\n")
+            local term_id = api.nvim_get_option_value("channel", { buf = 0 })
+            if term_id then
+                api.nvim_chan_send(term_id, command .. "\n")
             else
                 vim.notify("Could not get terminal job ID to send command.", vim.log.levels.WARN)
             end
